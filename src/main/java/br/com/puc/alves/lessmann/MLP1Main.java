@@ -102,9 +102,9 @@ public class MLP1Main {
         pd = Util.getPD(evaluation);
         pf = Util.getPF(evaluation);
         
-        logger.info("AUC = " + auc2);
+        logger.info("DataSet : " + dataSetName + "AUC = " + auc2);
         double balance = Util.getBalance(pd, pf);
-        logger.info("Balance = "+balance);
+        logger.info("DataSet : " + dataSetName + "Balance = "+balance);
         Output output = new Output(dataSetName, auc2, auc1, balance);
         return output;
     }

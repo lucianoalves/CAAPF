@@ -36,8 +36,8 @@ public class KNNMain {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        KNNMain naiveBayesMain = new KNNMain();
-        naiveBayesMain.init();
+        KNNMain KNNMain = new KNNMain();
+        KNNMain.init();
     }
 
     public void init() {

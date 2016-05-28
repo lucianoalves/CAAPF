@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import weka.classifiers.Evaluation;
 import weka.classifiers.functions.LibSVM;
 import weka.core.Instances;
+import weka.core.SelectedTag;
 import weka.core.converters.ConverterUtils;
 
 /**
@@ -49,7 +50,7 @@ public class LS_SVMMain {
             List<Output> listOutputs = new ArrayList();
             Output output;
             for (File file : files) {
-                if (!file.isDirectory() && file.getName().contains("arff")) {
+                if (!file.isDirectory() && file.getName().contains("arff") && file.getName().equals("CM1.arff")) {
                     fileName = file.getName();
                     instances = new ConverterUtils.DataSource(Util.DB_DF_PRED + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + fileName).getDataSet();
                     if (instances.classIndex() == -1) {
@@ -80,9 +81,12 @@ public class LS_SVMMain {
         Evaluation evaluation = new Evaluation(train);
         
         LibSVM libSVM = new LibSVM();
+        libSVM.setKernelType(new SelectedTag(LibSVM.KERNELTYPE_RBF, LibSVM.TAGS_KERNELTYPE));
+        libSVM.setSVMType(new SelectedTag(LibSVM.SVMTYPE_NU_SVR, LibSVM.TAGS_SVMTYPE));
+        //libSVM.setNormalize(true);
         HyperParamSVM hyperParamSVM = model.get(0);
         
-        libSVM.setGamma(hyperParamSVM.getGama());
+        libSVM.setGamma(hyperParamSVM.getGamma());
         libSVM.setCost(hyperParamSVM.getCost());
         libSVM.buildClassifier(train);
         double auc2;
@@ -93,7 +97,7 @@ public class LS_SVMMain {
         auc1 = evaluation.areaUnderROC(Util.DEFECT_FREE);
         
         hyperParamSVM = model.get(1);
-        libSVM.setGamma(hyperParamSVM.getGama());
+        libSVM.setGamma(hyperParamSVM.getGamma());
         libSVM.setCost(hyperParamSVM.getCost());
         libSVM.buildClassifier(train);
         double pd;
@@ -121,23 +125,30 @@ public class LS_SVMMain {
         Random random;
         
         LibSVM libSVM = new LibSVM();
-               
+        libSVM.setKernelType(new SelectedTag(LibSVM.KERNELTYPE_RBF, LibSVM.TAGS_KERNELTYPE));
+        libSVM.setSVMType(new SelectedTag(LibSVM.SVMTYPE_NU_SVR, LibSVM.TAGS_SVMTYPE));
+        //libSVM.setNormalize(true);
         int i = 0;
         double n = Math.sqrt(instances.numAttributes());
         for (HyperParamSVM s : listOptions) {
-            libSVM.setGamma(s.getGama());
-            libSVM.setCost(s.getCost()*n);
+            double gamma = s.getGamma() * n;
+            libSVM.setGamma(gamma);
+            libSVM.setCost(s.getCost());
             evaluation = new Evaluation(instances);
             random = new Random(i);
             evaluation.crossValidateModel(libSVM, instances, 10, random);
             double newAuc = evaluation.areaUnderROC(Util.DEFECTIVE);
             double newBalance = Util.getBalance(Util.getPD(evaluation), Util.getPF(evaluation));
             if (newAuc > auc) {
+                logger.debug("Trocou AUC "+newAuc);
                 hyperParameterSVMAUC = s;
+                hyperParameterSVMAUC.setGamma(gamma);
                 auc = newAuc;
             }
             if (newBalance > balance) {
+                logger.debug("Trocou Balance "+newBalance);
                 hyperParameterSVMBalance = s;
+                hyperParameterSVMBalance.setGamma(gamma);
                 balance = newBalance;
             }
             i++;
@@ -153,7 +164,7 @@ public class LS_SVMMain {
     {
         try
         {
-            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ "LS-SVM.csv"), "UTF-8"))) {
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ "test-SVM.csv"), "UTF-8"))) {
                 StringBuffer oneLine = new StringBuffer();
                 
                 Field[] fields = Output.class.getFields();

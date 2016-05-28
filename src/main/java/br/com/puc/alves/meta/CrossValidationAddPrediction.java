@@ -58,7 +58,7 @@ public class CrossValidationAddPrediction {
             for (int k =1; k < 2; k++)
             {
                 for (int i = 0; i < Util.algorithmAmount; i++) {
-                    prediction.process(i+45, MLAlgorithmEnum.values()[i], k);
+                    prediction.process(i+23+Util.algorithmAmount, MLAlgorithmEnum.values()[i], k);
                 }
             }
         } catch (Exception e) {
@@ -66,12 +66,9 @@ public class CrossValidationAddPrediction {
         }
     }
     
-    
-    
     public void process(int algorithmRankingIndex, MLAlgorithmEnum algorithmEnum, int k) throws Exception {
         // loads data and set class index
-        logger.debug(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + "metaFeatures-"+Util.MEASURE_TYPE+"-"+Util.algorithmAmount +".csv");
-        Instances instances = DataSource.read(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + "metaFeatures-"+Util.MEASURE_TYPE+"-"+Util.algorithmAmount +".csv");
+        Instances instances = DataSource.read(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + "metaFeaturesWithRanking-"+Util.MEASURE_TYPE+"-"+Util.algorithmAmount +".csv");
         
         Instances trainInstances = Util.getTrainInstancesRankingKNN(instances, algorithmRankingIndex);
                 

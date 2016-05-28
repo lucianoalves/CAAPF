@@ -6,12 +6,15 @@
 package br.com.puc.alves.utils;
 
 import br.com.puc.alves.base.ClassifierRanking;
-import br.com.puc.alves.lessmann.Output;
+import br.com.puc.alves.base.ModelBean;
+import br.com.puc.alves.lessmann.HyperParamSVM;
 import br.com.puc.alves.lessmann.TreeOptions;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -73,10 +76,13 @@ public class Util {
 
     public final static int DEFECT_FREE = 0;
     public final static int DEFECTIVE = 1;
+    
+    public final static int SOLUTION_1 = 1;
+    public final static int SOLUTION_2 = 2;
 
     public final static String algorithms = ClassifierRanking.NB+CSV_SEPARATOR+ClassifierRanking.RF+CSV_SEPARATOR+ClassifierRanking.J48+CSV_SEPARATOR+ClassifierRanking.IBK+CSV_SEPARATOR+ClassifierRanking.SMO+CSV_SEPARATOR+ClassifierRanking.MLP;
     
-    public final static int algorithmAmount = 22;
+    public final static int algorithmAmount = 5;
     
     public static boolean IS_AUC = true;
 
@@ -101,7 +107,6 @@ public class Util {
         double pd2 = Math.pow(1 - pd, 2);
         double pf2 = Math.pow(0 - pf, 2);
         balance = 1 - ((Math.sqrt(pd2 + pf2)) / Math.sqrt(2));
-        logger.debug("Balance = " + balance);
         return balance;
     }
 
@@ -343,4 +348,37 @@ public class Util {
         return list;
     }
     
+    public static List<HyperParamSVM> getListHyperParamSVM() {
+        List<HyperParamSVM> list = new ArrayList<>();
+        
+        double cost[] = HyperParamSVM.C;
+        double gamma[] = HyperParamSVM.G;
+        
+        for (double c : cost) {
+            for (double g : gamma) {
+                list.add(new HyperParamSVM(c, g));
+            }
+        }
+        return list;
+    }
+    
+    public static void saveModel(String algorithmName, ModelBean bean) {
+        ObjectOutputStream objectOutputStream = null;
+        FileOutputStream outputStream;
+        try{
+            outputStream = new FileOutputStream(Util.BASE_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ algorithmName + ".model", true);
+            objectOutputStream = new ObjectOutputStream(outputStream);
+            objectOutputStream.writeObject(bean);
+        } catch (Exception e) {
+                logger.error("Exception is", e);
+        } finally {
+                if(objectOutputStream  != null){
+                    try {
+                        objectOutputStream.close();
+                    } catch (IOException ex) {
+                        logger.error("Exception is", ex);
+                    }
+                 } 
+        }
+    }
 }

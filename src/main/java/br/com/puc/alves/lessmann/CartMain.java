@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Random;
 import org.apache.log4j.Logger;
 import weka.classifiers.Evaluation;
-import weka.classifiers.trees.J48;
 import weka.classifiers.trees.SimpleCart;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils;
@@ -37,8 +36,8 @@ public class CartMain {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        CartMain naiveBayesMain = new CartMain();
-        naiveBayesMain.init();
+        CartMain cartMain = new CartMain();
+        cartMain.init();
     }
 
     public void init() {

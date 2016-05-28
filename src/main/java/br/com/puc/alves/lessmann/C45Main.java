@@ -36,8 +36,8 @@ public class C45Main {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        C45Main naiveBayesMain = new C45Main();
-        naiveBayesMain.init();
+        C45Main c45Main = new C45Main();
+        c45Main.init();
     }
 
     public void init() {

@@ -5,6 +5,7 @@
  */
 package br.com.puc.alves.meta;
 
+import br.com.puc.alves.base.MLAlgorithmEnum;
 import br.com.puc.alves.utils.Statistics;
 import br.com.puc.alves.utils.Util;
 import static br.com.puc.alves.utils.Util.CSV_SEPARATOR;
@@ -42,7 +43,7 @@ public class RankingKNNvsRankMediaAllAlgorithm {
 
             List<String> lines = Util.getCsvToList(Util.getFilePath(Util.RANKING_RESULT, "rankingAlgorithmBy", 1));
 
-
+            
             for (String l : lines) {
                 String[] r = l.split(Util.CSV_SEPARATOR);
                 if (r[0].equals("DataSetName") || r[0].trim().equals("")) continue;
@@ -60,7 +61,7 @@ public class RankingKNNvsRankMediaAllAlgorithm {
     }
     
     public void setAUC(String[] csvLineResult, double[] rankMedio, double[] rankTotal) {
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < Util.algorithmAmount; i++) {
             rankMedio[i] = Double.valueOf(csvLineResult[i+(Util.algorithmAmount*2+4)]);
             rankTotal[i] += rankMedio[i];
         }
@@ -70,7 +71,7 @@ public class RankingKNNvsRankMediaAllAlgorithm {
         int rankAtual;
         int rankPredicted;
         
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < Util.algorithmAmount; i++) {
             rankAtual = Integer.parseInt(csvLineResult[i*2+1]);
             rankPredicted = Integer.parseInt(csvLineResult[i*2+2]);
             if (rankPredicted == 1) {
@@ -104,9 +105,17 @@ public class RankingKNNvsRankMediaAllAlgorithm {
         try
         {
             try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.getFilePath(Util.RANKING_EXP, "ML-KNNvsRankMedia")), "UTF-8"))) {
-                bw.write("dataSetName"+CSV_SEPARATOR+"NB"+CSV_SEPARATOR+"RF"+CSV_SEPARATOR+"J48"+CSV_SEPARATOR+"IBK"+CSV_SEPARATOR+"SMO"+CSV_SEPARATOR+"MLP"+CSV_SEPARATOR+"ABM"+CSV_SEPARATOR
-                        +"RANK-META"+CSV_SEPARATOR+"RANK-NB"+CSV_SEPARATOR+"RANK-RF"+CSV_SEPARATOR+"RANK-J48"+CSV_SEPARATOR+"RANK-IBK"+CSV_SEPARATOR
-                        +"RANK-SMO"+CSV_SEPARATOR+"RANK-MLP"+CSV_SEPARATOR+"RANK-ABM");
+                bw.write("dataSetName");
+                for (MLAlgorithmEnum e : MLAlgorithmEnum.values()) {
+                    bw.write(CSV_SEPARATOR);
+                    bw.write(e.name());
+                }
+                bw.write(CSV_SEPARATOR);
+                bw.write("RANK-META");
+                for (MLAlgorithmEnum e : MLAlgorithmEnum.values()) {
+                    bw.write(CSV_SEPARATOR);
+                    bw.write("RANK-"+e.name());
+                }
                 bw.newLine();
                 StringBuffer oneLine;
                 double[] rankMedio;

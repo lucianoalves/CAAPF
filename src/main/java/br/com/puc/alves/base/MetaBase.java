@@ -63,8 +63,6 @@ public class MetaBase {
                     getDColMeasures(metaFeatures);
                     getStatLogFeatures(instances, metaFeatures);
                     getClassifier(instances, metaFeatures);
-                    logger.debug("Classifier-AUC: "+metaFeatures.getClassifierAUC());
-                    logger.debug("Classifier-Balance: "+metaFeatures.getClassifierBalance());
                     map.add(metaFeatures);
                 }
             }
@@ -395,7 +393,7 @@ public class MetaBase {
     {
         try
         {
-            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ "metaFeatures-"+Util.algorithmAmount +".csv"), "UTF-8"))) {
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ "metaFeatures-solution" +Util.SOLUTION_1+ ".csv"), "UTF-8"))) {
                 StringBuffer oneLine = new StringBuffer();
                 
                 Field[] fields = MetaFeatures.class.getFields();
@@ -405,7 +403,6 @@ public class MetaBase {
                         oneLine.append(Util.CSV_SEPARATOR);
                     }
                 }
-                
                 oneLine.append("NB-RANK-AUC");
                 oneLine.append(Util.CSV_SEPARATOR);
                 oneLine.append("NB-AUC");
@@ -523,7 +520,6 @@ public class MetaBase {
                     oneLine.append(Util.CSV_SEPARATOR);
                     oneLine.append(metaFeatures.getsDRatio() == -100D ? "?" : metaFeatures.getsDRatio());
                     oneLine.append(Util.CSV_SEPARATOR);
-                    
                     for (double measure : measuresAUC) {
                         oneLine.append(measure);
                         oneLine.append(Util.CSV_SEPARATOR);
@@ -537,6 +533,7 @@ public class MetaBase {
                     oneLine.append(metaFeatures.getClassifierAUC());
                     oneLine.append(Util.CSV_SEPARATOR);
                     oneLine.append(metaFeatures.getClassifierBalance());
+                    
                     bw.write(oneLine.toString());
                     bw.newLine();
                 }

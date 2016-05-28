@@ -5,11 +5,13 @@
  */
 package br.com.puc.alves.lessmann;
 
+import java.io.Serializable;
+
 /**
  *
  * @author luciano
  */
-public class Output {
+public class Output implements Comparable<Output>, Serializable {
     public String dataSetName;
     public double aucDefective;
     public double aucNonDefective;
@@ -21,7 +23,7 @@ public class Output {
         this.aucNonDefective = aucNonDefective;
         this.balance = balance;
     }
-
+  
     public String getDataSetName() {
         return dataSetName;
     }
@@ -52,5 +54,11 @@ public class Output {
 
     public void setBalance(double balance) {
         this.balance = balance;
+    }
+
+    @Override
+    public int compareTo(Output o) {
+        int c = this.dataSetName.toLowerCase().compareTo(o.getDataSetName().toLowerCase());
+        return c;
     }
 }

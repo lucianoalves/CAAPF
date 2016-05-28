@@ -115,31 +115,12 @@ public class RankingAUC {
     }
     
     private double setSpearmanRank(double[] rankings) {
-        double a1 = rankings[0] - rankings[1];
-        double a2 = rankings[2] - rankings[3];
-        double a3 = rankings[4] - rankings[5];
-        double a4 = rankings[6] - rankings[7];
-        double a5 = rankings[8] - rankings[9];
-        double a6 = rankings[10] - rankings[11];
-        double a7 = rankings[12] - rankings[13];
-        double a8 = rankings[14] - rankings[15];
-        double a9 = rankings[16] - rankings[17];
-        double a10 = rankings[18] - rankings[19];
-        double a11 = rankings[20] - rankings[21];
-        double a12 = rankings[22] - rankings[23];
-        double a13 = rankings[24] - rankings[25];
-        double a14 = rankings[26] - rankings[27];
-        double a15 = rankings[28] - rankings[29];
-        double a16 = rankings[30] - rankings[31];
-        double a17 = rankings[32] - rankings[33];
-        double a18 = rankings[34] - rankings[35];
-        double a19 = rankings[36] - rankings[37];
-        double a20 = rankings[38] - rankings[39];
-        double a21 = rankings[40] - rankings[41];
-        double a22 = rankings[42] - rankings[43];
-        
-        double spearman = a1 * a1 + a2 * a2 + a3 * a3 + a4 * a4 + a5 * a5 + a6 * a6 + a7 * a7 + a8 * a8 + a9 * a9 + a10 * a10 + a11 * a11 +
-                a12 * a12 + a13 * a13 + a14 * a14 + a15 * a15 + a16 * a16 + a17 * a17 + a18 * a18 + a19 * a19 + a20 * a20 + a21 * a21 + a22 * a22;
+        double spearman = 0;
+        double d;
+        for (int i = 0; i < Util.algorithmAmount * 2; i+=2) {
+            d = rankings[i] - rankings[i+1];
+            spearman = spearman + d * d;
+        }
         spearman = 1 - (6 * spearman / (Util.algorithmAmount * Util.algorithmAmount * Util.algorithmAmount - Util.algorithmAmount));
         return spearman;
     }

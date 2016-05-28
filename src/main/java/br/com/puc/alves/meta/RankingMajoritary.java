@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.apache.log4j.Logger;
@@ -67,7 +66,7 @@ public class RankingMajoritary {
             results[1] = rankAtual;
             results[2] = rankMajoritory;
             results[3] = Utils.doubleToString(getSpearman(rankAtual, rankMajoritory), 3);
-            results[4] = line[25];
+            results[4] = line[Util.algorithmAmount*3+3];
                     
             listResults.add(results);
         }
@@ -77,14 +76,13 @@ public class RankingMajoritary {
     public double getSpearman(String sRankAtual, String sRankPredicted) {
         String[] rankAtual = sRankAtual.split(":");
         String[] rankPredicted = sRankPredicted.split(":");
-        double a1 = Integer.parseInt(rankAtual[0]) - Integer.parseInt(rankPredicted[0]);
-        double a2 = Integer.parseInt(rankAtual[1]) - Integer.parseInt(rankPredicted[1]);
-        double a3 = Integer.parseInt(rankAtual[2]) - Integer.parseInt(rankPredicted[2]);
-        double a4 = Integer.parseInt(rankAtual[3]) - Integer.parseInt(rankPredicted[3]);
-        double a5 = Integer.parseInt(rankAtual[4]) - Integer.parseInt(rankPredicted[4]);
-        double a6 = Integer.parseInt(rankAtual[5]) - Integer.parseInt(rankPredicted[5]);
-        double a7 = Integer.parseInt(rankAtual[6]) - Integer.parseInt(rankPredicted[6]);
-        double spearman = a1 * a1 + a2 * a2 + a3 * a3 + a4 * a4 + a5 * a5 + a6 * a6 + a7 * a7;
+        
+        double spearman = 0;
+        double d;
+        for (int i = 0; i < Util.algorithmAmount; i++) {
+            d = Integer.parseInt(rankAtual[i]) - Integer.parseInt(rankPredicted[i]);
+            spearman = spearman + d * d;
+        }
         spearman = 1 - (6 * spearman / (Util.algorithmAmount * Util.algorithmAmount * Util.algorithmAmount - Util.algorithmAmount));
         return spearman;
     }    

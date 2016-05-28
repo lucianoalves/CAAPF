@@ -35,6 +35,27 @@
             <version>1.0.8</version>
         </dependency>
         <dependency>
+            <groupId>nz.ac.waikato.cms.weka</groupId>
+            <artifactId>LibLINEAR</artifactId>
+            <version>1.9.7</version>
+        </dependency>
+        <dependency>
+            <groupId>nz.ac.waikato.cms.weka</groupId>
+            <artifactId>multilayerPerceptronCS</artifactId>
+            <version>1.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>nz.ac.waikato.cms.weka</groupId>
+            <artifactId>LibSVM</artifactId>
+            <version>1.0.6</version>
+        </dependency>
+        <!-- http://mvnrepository.com/artifact/org.jpmml/jpmml-xgboost -->
+        <dependency>
+            <groupId>org.jpmml</groupId>
+            <artifactId>jpmml-xgboost</artifactId>
+            <version>1.0.4</version>
+        </dependency>
+        <dependency>
             <groupId>org.pentaho.pentaho-commons</groupId>
             <artifactId>pentaho-package-manager</artifactId>
             <version>1.0.11</version>
@@ -42,7 +63,7 @@
         <dependency>
             <groupId>com.googlecode.efficient-java-matrix-library</groupId>
             <artifactId>ejml</artifactId>
-            <version>0.16</version>
+            <version>0.25</version>
         </dependency>
         <dependency>
             <groupId>log4j</groupId>
@@ -67,7 +88,7 @@
             <plugin>
               <groupId>org.apache.maven.plugins</groupId>
               <artifactId>maven-compiler-plugin</artifactId>
-              <version>3.2</version>
+              <version>3.3</version>
               <configuration>
                 <source>1.8</source>
                 <target>1.8</target>
@@ -75,4 +96,5 @@
             </plugin>
         </plugins>
   </build>
+    <name>CAAPF</name>
 </project>

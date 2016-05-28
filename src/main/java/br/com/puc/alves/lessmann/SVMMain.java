@@ -50,7 +50,7 @@ public class SVMMain {
             List<Output> listOutputs = new ArrayList();
             Output output;
             for (File file : files) {
-                if (!file.isDirectory() && file.getName().contains("arff")) {
+                if (!file.isDirectory() && file.getName().contains("arff") && file.getName().equals("CM1.arff")) {
                     fileName = file.getName();
                     instances = new ConverterUtils.DataSource(Util.DB_DF_PRED + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + fileName).getDataSet();
                     if (instances.classIndex() == -1) {
@@ -83,7 +83,7 @@ public class SVMMain {
         SMO smo = new SMO();
         HyperParamSVM hyperParamSVM = model.get(0);
         RBFKernel rbfk = new RBFKernel();
-        rbfk.setGamma(hyperParamSVM.getGama());
+        rbfk.setGamma(hyperParamSVM.getGamma());
         smo.setKernel(rbfk);
         smo.setC(hyperParamSVM.getCost());
         smo.buildClassifier(train);
@@ -95,7 +95,7 @@ public class SVMMain {
         auc1 = evaluation.areaUnderROC(Util.DEFECT_FREE);
         
         hyperParamSVM = model.get(1);
-        rbfk.setGamma(hyperParamSVM.getGama());
+        rbfk.setGamma(hyperParamSVM.getGamma());
         smo.setKernel(rbfk);
         smo.setC(hyperParamSVM.getCost());
         smo.buildClassifier(train);
@@ -126,28 +126,37 @@ public class SVMMain {
         SMO smo = new SMO();
                
         int i = 0;
-        double n = Math.sqrt(instances.numAttributes());
+        double n = Math.sqrt(instances.numAttributes());        
         RBFKernel rbfKernel = new RBFKernel();
+        logger.debug("Amount of parameters: "+listOptions.size());
         for (HyperParamSVM s : listOptions) {
-            rbfKernel.setGamma(s.getGama());
+            double gamma = s.getGamma() * n;
+            //logger.debug("Execution parameter (" + s.getCost() + ", "+ gamma + ")");
+            rbfKernel.setGamma(gamma);
             smo.setKernel(rbfKernel);
-            smo.setC(s.getCost()*n);
+            smo.setC(s.getCost());
             evaluation = new Evaluation(instances);
             random = new Random(i);
             evaluation.crossValidateModel(smo, instances, 10, random);
             double newAuc = evaluation.areaUnderROC(Util.DEFECTIVE);
             double newBalance = Util.getBalance(Util.getPD(evaluation), Util.getPF(evaluation));
             if (newAuc > auc) {
+                logger.debug("Trocou AUC "+newAuc);
                 hyperParameterSVMAUC = s;
+                hyperParameterSVMAUC.setGamma(gamma);
                 auc = newAuc;
             }
             if (newBalance > balance) {
+                logger.debug("Trocou Balance "+newBalance);
                 hyperParameterSVMBalance = s;
+                hyperParameterSVMBalance.setGamma(gamma);
                 balance = newBalance;
             }
             i++;
         }
         
+        logger.debug("Optimal parameter AUC (" + hyperParameterSVMAUC.getCost() + ", "+ hyperParameterSVMAUC.getGamma() + ")");
+        logger.debug("Optimal parameter BAL (" + hyperParameterSVMBalance.getCost() + ", "+ hyperParameterSVMBalance.getGamma() + ")");
         list.add(hyperParameterSVMAUC);
         list.add(hyperParameterSVMBalance);
         

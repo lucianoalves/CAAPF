@@ -20,8 +20,10 @@ import java.util.List;
 import java.util.Random;
 import org.apache.log4j.Logger;
 import weka.classifiers.Evaluation;
-import weka.classifiers.lazy.IBk;
+import weka.classifiers.functions.LibLINEAR;
+import weka.classifiers.functions.LibSVM;
 import weka.core.Instances;
+import weka.core.SelectedTag;
 import weka.core.converters.ConverterUtils;
 
 /**
@@ -49,7 +51,7 @@ public class L_SVMMain {
             List<Output> listOutputs = new ArrayList();
             Output output;
             for (File file : files) {
-                if (!file.isDirectory() && file.getName().contains("arff")) {
+                if (!file.isDirectory() && file.getName().contains("arff") && file.getName().equals("CM1.arff")) {
                     fileName = file.getName();
                     instances = new ConverterUtils.DataSource(Util.DB_DF_PRED + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + fileName).getDataSet();
                     if (instances.classIndex() == -1) {
@@ -65,7 +67,7 @@ public class L_SVMMain {
                     Instances test = new Instances(instances, trainSize, testSize);
                     logger.debug("TEST " + test.size());
                     
-                    int[] model = getModel(train);
+                    double[] model = getModel(train);
                     output = getEvaluation(test, train, fileName, model);
                     listOutputs.add(output);
                 }
@@ -76,24 +78,26 @@ public class L_SVMMain {
         }
     }
 
-    private Output getEvaluation(Instances test, Instances train, String dataSetName, int[] model) throws Exception {
+    private Output getEvaluation(Instances test, Instances train, String dataSetName, double[] model) throws Exception {
         Evaluation evaluation = new Evaluation(train);
         
-        IBk ibk = new IBk(model[0]);
-        ibk.buildClassifier(train);
+        LibLINEAR libLINEAR = new LibLINEAR();
+        libLINEAR.setSVMType(new SelectedTag(1, LibLINEAR.TAGS_SVMTYPE));
+        libLINEAR.setCost(model[0]);
+        libLINEAR.buildClassifier(train);
         double auc2;
         double auc1;
         
-        evaluation.evaluateModel(ibk, test);
+        evaluation.evaluateModel(libLINEAR, test);
         auc2 = evaluation.areaUnderROC(Util.DEFECTIVE);
         auc1 = evaluation.areaUnderROC(Util.DEFECT_FREE);
         
-        ibk.setKNN(model[1]);
-        ibk.buildClassifier(train);
+        libLINEAR.setCost(model[1]);
+        libLINEAR.buildClassifier(train);
         double pd;
         double pf;
 
-        evaluation.evaluateModel(ibk, test);
+        evaluation.evaluateModel(libLINEAR, test);
         pd = Util.getPD(evaluation);
         pf = Util.getPF(evaluation);
         
@@ -104,28 +108,32 @@ public class L_SVMMain {
         return output;
     }
     
-    public int[] getModel(Instances instances) throws Exception {
-        int[] k = new int[2];
+    public double[] getModel(Instances instances) throws Exception {
+        double[] k = new double[2];
         double auc = 0;
         double balance = 0;
         Evaluation evaluation;
         Random random;
-        IBk ibk = new IBk();
+        LibLINEAR libLINEAR = new LibLINEAR();
+        libLINEAR.setSVMType(new SelectedTag(1, LibLINEAR.TAGS_SVMTYPE));
+        int j = 1;
         for (int i = -6; i < 21; i++) {
-            ibk.setKNN(i);
+            double log = Math.pow(2, i);
+            libLINEAR.setCost(log);
             evaluation = new Evaluation(instances);
-            random = new Random(i);
-            evaluation.crossValidateModel(ibk, instances, 10, random);
+            random = new Random(j);
+            evaluation.crossValidateModel(libLINEAR, instances, 10, random);
             double newAuc = evaluation.areaUnderROC(Util.DEFECTIVE);
             double newBalance = Util.getBalance(Util.getPD(evaluation), Util.getPF(evaluation));
             if (newAuc > auc) {
-                k[0] = i;
+                k[0] = log;
                 auc = newAuc;
             }
             if (newBalance > balance) {
-                k[1] = i;
+                k[1] = log;
                 balance = newBalance;
             }
+            j++;
         }
         return k;
     }

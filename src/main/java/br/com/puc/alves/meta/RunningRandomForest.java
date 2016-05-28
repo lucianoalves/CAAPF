@@ -6,7 +6,7 @@
 package br.com.puc.alves.meta;
 
 import br.com.puc.alves.utils.Util;
-import br.com.puc.alves.base.ClassifierRanking;
+import br.com.puc.alves.base.MLAlgorithmEnum;
 import br.com.puc.alves.utils.Statistics;
 import static br.com.puc.alves.utils.Util.CSV_SEPARATOR;
 import java.io.BufferedWriter;
@@ -19,8 +19,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import org.apache.log4j.Logger;
 import weka.classifiers.Classifier;
+import weka.classifiers.Evaluation;
 import weka.classifiers.trees.RandomForest;
 import weka.core.Instances;
 import weka.core.Utils;
@@ -46,20 +48,12 @@ public class RunningRandomForest {
     }
     
     private Instances init() throws Exception {
-        Instances instances = ConverterUtils.DataSource.read(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE + "/metaFeatures-"+Util.algorithmAmount+".csv");
+        Instances instances = ConverterUtils.DataSource.read(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE + "/metaFeaturesWithBestAlgorithm-"+Util.MEASURE_TYPE+"-"+Util.algorithmAmount+".csv");
         Instances trainInstances = Util.getTrainInstancesBestAlgorithm(instances);
         
+        //Remove attributes that were the measure of the execution algorithms
         while (instances.numAttributes() > 24) {
-            if (instances.numAttributes() > 25) {
-                instances.deleteAttributeAt(instances.numAttributes()-3);
-            } else {
-                if (Util.MEASURE_TYPE.equals(Util.MEASURE_AUC)) {
-                    instances.deleteAttributeAt(instances.numAttributes()-1);
-                } else {
-                    instances.deleteAttributeAt(instances.numAttributes()-2);
-                }
-            }
-            
+            instances.deleteAttributeAt(instances.numAttributes()-2);
         }
         //Select attribute by category (STATLOG/COMPLEXITY/NONE)
         Util.getInstancesFiltered(instances);
@@ -82,7 +76,6 @@ public class RunningRandomForest {
         logger.debug("Set classindex : " + instances.classIndex());
         // classifier
         Classifier cls = new RandomForest();
-        
         // cls.setNumTrees(30);
         // other options
         int seed = 10;
@@ -108,6 +101,18 @@ public class RunningRandomForest {
             //logger.debug("Evaluating model...");
             //eval.evaluateModel(clsCopy, test);
             // add predictions
+            
+            logger.debug("Optimizing parameters...");
+            int[] model = getModel(train);
+            if (Util.MEASURE_TYPE.equals(Util.MEASURE_AUC)) {
+                //((RandomForest)cls).setNumTrees(model[0][0]);
+                ((RandomForest)cls).setNumFeatures(model[0]);
+            } else {
+                //((RandomForest)cls).setNumTrees(model[1][0]);
+                ((RandomForest)cls).setNumFeatures(model[1]);
+            }
+            cls.buildClassifier(train);
+            
             AddClassification filter = new AddClassification();
             logger.debug("Creating filter...");
             filter.setClassifier(cls);
@@ -144,8 +149,41 @@ public class RunningRandomForest {
         //        + "-fold Cross-validation ===", true));
         // output "enriched" dataset
         // DataSink.write(Utils.getOption("o", args), predictedData);
-        ConverterUtils.DataSink.write(Util.BEST_ALGORITHM_PREDICT + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + Util.META_BASE_TYPE + "/RandomForestOnly" + "-" + Util.algorithmAmount + "-" + Util.MEASURE_TYPE + ".arff", predictedData);
+        ConverterUtils.DataSink.write(Util.BEST_ALGORITHM_PREDICT + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + Util.META_BASE_TYPE + "/"  + MLAlgorithmEnum.RND_FOR.name() + "-" + Util.algorithmAmount + "-" + Util.MEASURE_TYPE + ".arff", predictedData);
         return predictedData;
+    }
+    
+    public int[] getModel(Instances instances) throws Exception {
+        int[] k = new int[2];
+        double auc = 0;
+        double balance = 0;
+        Evaluation evaluation;
+        Random random;
+        RandomForest randomForest = new RandomForest();
+        double[] numAttr = {0.5,1,2};      
+        int i = 0;
+        double size = Math.sqrt(instances.numAttributes());
+        
+        for (double a : numAttr ) {
+            evaluation = new Evaluation(instances);
+            random = new Random(i);
+            
+            int f = new Double(a * size).intValue();
+            randomForest.setNumFeatures(f);
+            evaluation.crossValidateModel(randomForest, instances, 10, random);
+            double newAuc = evaluation.areaUnderROC(Util.DEFECTIVE);
+            double newBalance = Util.getBalance(Util.getPD(evaluation), Util.getPF(evaluation));
+            if (newAuc > auc) {
+                k[0] = f;
+                auc = newAuc;
+            }
+            if (newBalance > balance) {
+                k[1] = f;
+                balance = newBalance;
+            }
+            i++;
+        }
+        return k;
     }
     
     public Map<String, double[]> process(Instances instances) {
@@ -160,38 +198,30 @@ public class RunningRandomForest {
             
             String rfPredicted = instances.get(n).stringValue(Util.getPredictorPosition(1));
             n++;
-            int order = getOrderByAlgorithm(rfPredicted);
+            int order = MLAlgorithmEnum.valueOf(rfPredicted).ordinal();
             
-            values = new double[16];
-            values[0] = Double.valueOf(r[18]);
-            values[1] = Double.valueOf(r[19]);
-            values[2] = Double.valueOf(r[20]);
-            values[3] = Double.valueOf(r[21]);
-            values[4] = Double.valueOf(r[22]);
-            values[5] = Double.valueOf(r[23]);
-            values[6] = Double.valueOf(r[24]);
+            values = new double[Util.algorithmAmount*2+2];
+            for (int i = 0; i < Util.algorithmAmount; i++) {
+                values[i] = Double.valueOf(r[i+Util.algorithmAmount*2+3]);
+            }
+                        
+            values[Util.algorithmAmount] = values[order];
             
-            values[7] = values[order-1];
+            for (int i = 0; i < Util.algorithmAmount; i++) {
+                values[i+Util.algorithmAmount+1] = Double.valueOf(r[i*2+1]);
+            }
+            values[Util.algorithmAmount*2+1] = values[order+Util.algorithmAmount+1];
             
-            values[8] = Double.valueOf(r[1]);
-            values[9] = Double.valueOf(r[3]);
-            values[10] = Double.valueOf(r[5]);
-            values[11] = Double.valueOf(r[7]);
-            values[12] = Double.valueOf(r[9]);
-            values[13] = Double.valueOf(r[11]);
-            values[14] = Double.valueOf(r[13]);
-            values[15] = values[order+Util.algorithmAmount];
-            
-            double value = values[15];
-            for (int i = 8; i < (8 + Util.algorithmAmount); i++) {
+            double value = values[Util.algorithmAmount*2+1];
+            for (int i = 1 + Util.algorithmAmount; i < (Util.algorithmAmount * 2 + 1); i++) {
                 if (value == values[i]) {
-                    values[15] += 0.5;
+                    values[Util.algorithmAmount*2+1] += 0.5;
                     values[i] += 0.5;
                 }
             }
 
             value += 1d;
-            for (int i = 8; i < (8 + Util.algorithmAmount); i++) {
+            for (int i = 1 + Util.algorithmAmount; i < (Util.algorithmAmount * 2 + 1); i++) {
                 if (values[i] >= value) {
                     values[i] = values[i] + 1d;
                 }
@@ -201,48 +231,31 @@ public class RunningRandomForest {
         return dataSets;
     }
     
-    private int getOrderByAlgorithm(String algorithmName) {
-        int order = 0;
-        switch(algorithmName) {
-            case ClassifierRanking.RF: 
-                order = 2; 
-                break;
-            case ClassifierRanking.NB:
-                order = 1; 
-                break;
-            case ClassifierRanking.J48:
-                order = 3; 
-                break;
-            case ClassifierRanking.IBK:
-                order = 4; 
-                break;
-            case ClassifierRanking.SMO:
-                order = 5;
-                break;
-            case ClassifierRanking.MLP:
-                order = 6; 
-                break;
-            case ClassifierRanking.ABM:
-                order = 7; 
-                break;
-            default:
-                throw new NumberFormatException("Invalid algorithm name " + algorithmName);
-        }
-            
-        return order;
-    }
-    
     private void writeToCSV(Map<String, double[]> dataSets) {
         try
         {
             try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.getFilePath(Util.BEST_ALGORITHM_EXP, "ValidateRandomForestMedia")), "UTF-8"))) {
-                bw.write("dataSetName"+CSV_SEPARATOR+"NB"+CSV_SEPARATOR+"RF"+CSV_SEPARATOR+"J48"+CSV_SEPARATOR+"IBK"+CSV_SEPARATOR+"SMO"+CSV_SEPARATOR+
-                        "MLP"+CSV_SEPARATOR+"ABM"+CSV_SEPARATOR+"METHOD VALUE"+CSV_SEPARATOR+"RANK-NB"+CSV_SEPARATOR+"RANK-RF"+CSV_SEPARATOR+
-                        "RANK-J48"+CSV_SEPARATOR+"RANK-IBK"+CSV_SEPARATOR+"RANK-SMO"+CSV_SEPARATOR+"RANK-MLP"+CSV_SEPARATOR+"RANK-ABM"+CSV_SEPARATOR+"RANK-METHOD");
+                bw.write("dataSetName");
+                
+                for (MLAlgorithmEnum e : MLAlgorithmEnum.values()) {
+                    bw.write(CSV_SEPARATOR);
+                    bw.write(e.name());
+                }
+                bw.write(CSV_SEPARATOR);
+                bw.write("METHOD VALUE");
+                
+                for (MLAlgorithmEnum e : MLAlgorithmEnum.values()) {
+                    bw.write(CSV_SEPARATOR);
+                    bw.write("RANK-"+e.name());
+                }
+                
+                bw.write(CSV_SEPARATOR);
+                bw.write("RANK-METHOD");
+                
                 bw.newLine();
                 StringBuffer oneLine;
                 
-                double[] media = new double[16];
+                double[] media = new double[Util.algorithmAmount*2+2];
                 for(Map.Entry<String, double[]> entry : dataSets.entrySet()) {
                     oneLine = new StringBuffer();
                     oneLine.append(entry.getKey());

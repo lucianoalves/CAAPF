@@ -1,0 +1,195 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package br.com.puc.alves.meta;
+
+import br.com.puc.alves.base.MLAlgorithmEnum;
+import br.com.puc.alves.utils.Statistics;
+import br.com.puc.alves.utils.Util;
+import static br.com.puc.alves.utils.Util.CSV_SEPARATOR;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.log4j.Logger;
+import weka.core.Utils;
+
+/**
+ *
+ * @author ssad
+ */
+public class RankingRPCvsRankMediaAllAlgorithm {
+    final static Logger logger = Logger.getLogger(RankingRPCvsRankMediaAllAlgorithm.class);
+    
+    public static void main(String[] args) {
+        RankingRPCvsRankMediaAllAlgorithm averageRanking = new RankingRPCvsRankMediaAllAlgorithm();
+        //String measure = "AUC";
+        averageRanking.process();
+    }
+    
+    public void process() {
+        try {
+            double[] rankMedio;
+            double[] rankTotal = new double[Util.algorithmAmount+1];
+
+            List<String> dataSets = new ArrayList<>();
+            List<double[]> rankMedios = new ArrayList<>();
+
+            List<String> lines = Util.getCsvToList(Util.getFilePath(Util.RANKING_RESULT, "RPC (DecisionStump)", 0));
+
+            
+            for (String l : lines) {
+                String[] r = l.split(Util.CSV_SEPARATOR);
+                if (r[0].equals("DataSetName") || r[0].trim().equals("")) continue;
+                rankMedio = new double[Util.algorithmAmount+1];
+                //setAUC(r, rankMedio, rankTotal);
+                setRank(r, rankMedio, rankTotal);
+                dataSets.add(r[0]);
+                rankMedios.add(rankMedio);
+            }
+
+            writeToCSV(dataSets, rankMedios, rankTotal);
+        } catch (Exception e) {
+            logger.error("Exception is", e);
+        }
+    }
+    /*
+    public void setAUC(String[] csvLineResult, double[] rankMedio, double[] rankTotal) {
+        for (int i = 0; i < Util.algorithmAmount; i++) {
+            rankMedio[i] = Double.valueOf(csvLineResult[i+(Util.algorithmAmount*2+4)]);
+            rankTotal[i] += rankMedio[i];
+        }
+    }
+    */
+    public void setRank(String[] csvLineResult, double[] rankMedio, double[] rankTotal) {
+        double rankAtual;
+        double rankPredicted;
+        int f = 0;
+        for (int i = 0; i < Util.algorithmAmount; i++) {
+            rankAtual = Double.valueOf(csvLineResult[i*2+1]);
+            rankPredicted = Double.valueOf(csvLineResult[i*2+2]);
+            if (rankPredicted == 1 || rankPredicted == 1.5) {
+                rankMedio[0] += rankAtual;
+                f++;
+            }
+            rankMedio[i+1] = rankAtual;
+        }
+        
+        if (f == 0) {
+            for (int i = 0; i < Util.algorithmAmount; i++) {
+                rankAtual = Double.valueOf(csvLineResult[i*2+1]);
+                rankPredicted = Double.valueOf(csvLineResult[i*2+2]);
+                if (rankPredicted == 2) {
+                    rankMedio[0] += rankAtual;
+                    f++;
+                }
+            }
+        }
+        
+        rankMedio[0] = rankMedio[0] / f;
+        
+        //setWidth
+        for (int i = 1; i < (1+Util.algorithmAmount); i++) {
+            if (rankMedio[0] == rankMedio[i]) {
+                rankMedio[i] = rankMedio[i] + 0.5d;
+                rankMedio[0] = rankMedio[0] + 0.5d;
+            }
+        }
+        
+        //increase rank
+        double value = rankMedio[0] + 0.5;
+        for (int i = 1; i < (1+Util.algorithmAmount); i++) {
+            if (rankMedio[i] >= value) {
+                rankMedio[i] = rankMedio[i] + 1d;
+            }
+        }
+        
+        for (int i = 0; i < (1+Util.algorithmAmount); i++) {
+            rankTotal[i] += rankMedio[i];
+        }
+    }
+    
+    private void writeToCSV(List<String> dataSets, List<double[]> rankMedios, double[] rankTotal) {
+        try
+        {
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.getFilePath(Util.RANKING_EXP, "ML-RPCvsRankMedia")), "UTF-8"))) {
+                bw.write("dataSetName");
+                /*
+                for (MLAlgorithmEnum e : MLAlgorithmEnum.values()) {
+                    bw.write(CSV_SEPARATOR);
+                    bw.write(e.name());
+                }
+                */
+                bw.write(CSV_SEPARATOR);
+                bw.write("RANK-META");
+                for (MLAlgorithmEnum e : MLAlgorithmEnum.values()) {
+                    bw.write(CSV_SEPARATOR);
+                    bw.write("RANK-"+e.name());
+                }
+                bw.newLine();
+                StringBuffer oneLine;
+                double[] rankMedio;
+                for (int i = 0; i < dataSets.size(); i++) {
+                    oneLine = new StringBuffer();
+                    
+                    oneLine.append(dataSets.get(i));
+                    oneLine.append(CSV_SEPARATOR);
+                    
+                    rankMedio = rankMedios.get(i);
+                    
+                    for (double d : rankMedio) {
+                        oneLine.append(Utils.doubleToString(d, 3));
+                        oneLine.append(CSV_SEPARATOR);
+                    }
+                    bw.write(oneLine.toString());
+                    bw.newLine();
+                }
+                
+                oneLine = new StringBuffer();
+                oneLine.append("MEDIA");
+                oneLine.append(CSV_SEPARATOR);
+                for (double d : rankTotal) {
+                    oneLine.append(Utils.doubleToString(d/dataSets.size(), 3));
+                    oneLine.append(CSV_SEPARATOR);
+                }
+                bw.write(oneLine.toString());
+                bw.newLine();
+                oneLine = new StringBuffer();
+                oneLine.append("StDev");
+                oneLine.append(CSV_SEPARATOR);
+                double[] stDev = getStDev(rankMedios, rankMedios.get(0).length);
+                for (double d : stDev) {
+                    oneLine.append(Utils.doubleToString(d, 3));
+                    oneLine.append(CSV_SEPARATOR);
+                }
+                bw.write(oneLine.toString());
+                
+                bw.flush();
+            }
+        }
+        catch (UnsupportedEncodingException e) {}
+        catch (FileNotFoundException e){}
+        catch (IOException e){}
+    }
+    
+    private double[] getStDev(List<double[]> rankMedios, int size) {
+        double[] stDev = new double[size];
+        Statistics statistics;
+        double[] values;
+        for (int i = size-1; i > -1; i--){
+            values = new double[rankMedios.size()];
+            for (int j = 0; j < rankMedios.size(); j++) {
+                values[j] = rankMedios.get(j)[i];
+            }
+            statistics = new Statistics(values);
+            stDev[i] = statistics.getStdDev();
+        }
+        return stDev;
+    }
+}

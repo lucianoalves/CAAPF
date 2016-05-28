@@ -81,7 +81,7 @@ public class RankingAleatory {
     
     public double getSpearman(double[] rankAtual, int[]rankPredicted) {
         double spearman = 0;
-        double d = 0;
+        double d;
         for (int i = 0; i < Util.algorithmAmount; i++) {
             d = rankAtual[i] - rankPredicted[i];
             spearman = spearman + d * d;

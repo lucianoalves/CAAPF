@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Random;
 import org.apache.log4j.Logger;
 import weka.classifiers.Evaluation;
-import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.meta.LogitBoost;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils;

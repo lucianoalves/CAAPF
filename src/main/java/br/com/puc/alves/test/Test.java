@@ -1,14 +1,16 @@
 package br.com.puc.alves.test;
 
-import br.com.puc.alves.lessmann.Output;
 import br.com.puc.alves.utils.Util;
+import java.io.CharArrayReader;
+import java.io.Externalizable;
 import java.io.File;
-import java.lang.reflect.Field;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import org.apache.log4j.Logger;
+import weka.attributeSelection.BestFirst;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.evaluation.output.prediction.PlainText;
@@ -20,14 +22,30 @@ import weka.core.converters.ConverterUtils;
 /**
  * Created by alves on 5/1/14.
  */
-public class Test {
+public class Test implements Cloneable {
     final static Logger logger = Logger.getLogger(Test.class);
     public static void main(String[] args) {
         try {
-
-            logger.info("RAIZ " + Math.pow(4, 2));
             
-            logger.info("RAIZ " + Math.sqrt(4));
+            String s = "abcdefgh";
+            char[] chars = new char[s.length()];
+            s.getChars(0, s.length(), chars, 0);
+            //CharArrayReader c1 = new CharArrayReader(c);
+            
+            /*
+            File[] files = new File(Util.DB_DF_PRED + Util.DB_TYPE + Util.SEARCH_TYPE).listFiles();
+            for (File file : files) {
+                if (!file.isDirectory() && file.getName().contains("arff")) {
+                    String fileName = file.getName();
+                    List<String> lines = Util.getCsvToList(Util.DB_DF_PRED + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + fileName);
+                    if (lines.get(lines.size()-1).toLowerCase().indexOf("true") >= 0) {
+                        logger.info("Data Set: "+fileName);
+                    }
+                    //instances = new ConverterUtils.DataSource(Util.DB_DF_PRED + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + fileName).getDataSet();
+                }
+            }
+
+             */       
             /*
             StringBuilder oneLine = new StringBuilder();
                 
@@ -82,7 +100,9 @@ public class Test {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        
     }
+    
     
     
     

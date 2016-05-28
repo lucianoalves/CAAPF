@@ -10,16 +10,16 @@ package br.com.puc.alves.lessmann;
  * @author luciano
  */
 public class HyperParamSVM {
-    public static double C[] = {0.5,5,10,15,25,50,100,250,500};
-    public static double G[] = {0.01,0.05,0.1,0.5,1,5,10,50,100,500,1000};
+    public static double C[] = {0.01,0.05,0.1,0.5,1,5,10,50,100,500,1000};
+    public static double G[] = {0.5,5,10,15,25,50,100,250,500};
     public static int CACHE_SIZE = 250007;
     
     private double cost;
-    private double gama;
+    private double gamma;
 
     public HyperParamSVM(double cost, double gama) {
         this.cost = cost;
-        this.gama = gama;
+        this.gamma = gama;
     }
     
     public double getCost() {
@@ -30,11 +30,11 @@ public class HyperParamSVM {
         this.cost = cost;
     }
 
-    public double getGama() {
-        return gama;
+    public double getGamma() {
+        return gamma;
     }
 
-    public void setGama(double gama) {
-        this.gama = gama;
+    public void setGamma(double gamma) {
+        this.gamma = gamma;
     }
 }
