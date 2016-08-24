@@ -19,10 +19,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import org.apache.log4j.Logger;
 import weka.classifiers.Classifier;
-import weka.classifiers.Evaluation;
 import weka.classifiers.trees.RandomForest;
 import weka.core.Instances;
 import weka.core.Utils;
@@ -101,7 +99,7 @@ public class RunningRandomForest {
             //logger.debug("Evaluating model...");
             //eval.evaluateModel(clsCopy, test);
             // add predictions
-            
+            /*
             logger.debug("Optimizing parameters...");
             int[] model = getModel(train);
             if (Util.MEASURE_TYPE.equals(Util.MEASURE_AUC)) {
@@ -111,6 +109,7 @@ public class RunningRandomForest {
                 //((RandomForest)cls).setNumTrees(model[1][0]);
                 ((RandomForest)cls).setNumFeatures(model[1]);
             }
+            */
             cls.buildClassifier(train);
             
             AddClassification filter = new AddClassification();
@@ -153,6 +152,7 @@ public class RunningRandomForest {
         return predictedData;
     }
     
+    /*
     public int[] getModel(Instances instances) throws Exception {
         int[] k = new int[2];
         double auc = 0;
@@ -185,9 +185,9 @@ public class RunningRandomForest {
         }
         return k;
     }
-    
+    */
     public Map<String, double[]> process(Instances instances) {
-        List<String> lines = Util.getCsvToList(Util.getFilePath(Util.RANKING_RESULT, "rankingAlgorithmBy", 1));
+        List<String> lines = Util.getCsvToList(Util.getFilePath(Util.RANKING_RESULT, "kNN", 3, Util.META_BASE_NONE));
         
         Map<String, double[]> dataSets = new LinkedHashMap<>();
         double[] values; 
@@ -200,28 +200,30 @@ public class RunningRandomForest {
             n++;
             int order = MLAlgorithmEnum.valueOf(rfPredicted).ordinal();
             
-            values = new double[Util.algorithmAmount*2+2];
+            values = new double[Util.algorithmAmount+1];
+            /*
             for (int i = 0; i < Util.algorithmAmount; i++) {
                 values[i] = Double.valueOf(r[i+Util.algorithmAmount*2+3]);
             }
-                        
+            
             values[Util.algorithmAmount] = values[order];
+            */
             
             for (int i = 0; i < Util.algorithmAmount; i++) {
-                values[i+Util.algorithmAmount+1] = Double.valueOf(r[i*2+1]);
+                values[i] = Double.valueOf(r[i*2+1]);
             }
-            values[Util.algorithmAmount*2+1] = values[order+Util.algorithmAmount+1];
+            values[Util.algorithmAmount] = values[order];
             
-            double value = values[Util.algorithmAmount*2+1];
-            for (int i = 1 + Util.algorithmAmount; i < (Util.algorithmAmount * 2 + 1); i++) {
+            double value = values[Util.algorithmAmount];
+            for (int i = 0; i < Util.algorithmAmount; i++) {
                 if (value == values[i]) {
-                    values[Util.algorithmAmount*2+1] += 0.5;
+                    values[Util.algorithmAmount] += 0.5;
                     values[i] += 0.5;
                 }
             }
 
             value += 1d;
-            for (int i = 1 + Util.algorithmAmount; i < (Util.algorithmAmount * 2 + 1); i++) {
+            for (int i = 0; i < Util.algorithmAmount; i++) {
                 if (values[i] >= value) {
                     values[i] = values[i] + 1d;
                 }
@@ -236,14 +238,14 @@ public class RunningRandomForest {
         {
             try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.getFilePath(Util.BEST_ALGORITHM_EXP, "ValidateRandomForestMedia")), "UTF-8"))) {
                 bw.write("dataSetName");
-                
+                /*
                 for (MLAlgorithmEnum e : MLAlgorithmEnum.values()) {
                     bw.write(CSV_SEPARATOR);
                     bw.write(e.name());
                 }
                 bw.write(CSV_SEPARATOR);
                 bw.write("METHOD VALUE");
-                
+                */
                 for (MLAlgorithmEnum e : MLAlgorithmEnum.values()) {
                     bw.write(CSV_SEPARATOR);
                     bw.write("RANK-"+e.name());
@@ -255,7 +257,7 @@ public class RunningRandomForest {
                 bw.newLine();
                 StringBuffer oneLine;
                 
-                double[] media = new double[Util.algorithmAmount*2+2];
+                double[] media = new double[Util.algorithmAmount+1];
                 for(Map.Entry<String, double[]> entry : dataSets.entrySet()) {
                     oneLine = new StringBuffer();
                     oneLine.append(entry.getKey());

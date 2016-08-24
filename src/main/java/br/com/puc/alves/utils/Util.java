@@ -32,6 +32,8 @@ public class Util {
     final static Logger logger = Logger.getLogger(Util.class);
     public final static String RESOURCES = "src/main/resources/";
     
+    public final static String LATEX = RESOURCES + "LATEX/";
+    
     public final static String DB_NORMALIZED_YES = RESOURCES + "NORMALIZED/";
     public final static String DB_NORMALIZED_NO = RESOURCES + "NONE/";
     public final static String DB_NORMALIZED = DB_NORMALIZED_NO;
@@ -63,7 +65,7 @@ public class Util {
     public final static String META_BASE_NONE = "NONE";
     public final static String META_BASE_STATLOG = "STATLOG";
     public final static String META_BASE_COMPLEXITY = "COMPLEXITY";
-    public static String META_BASE_TYPE = META_BASE_NONE;
+    public static String META_BASE_TYPE = META_BASE_STATLOG;
     
     public final static String MEASURE_AUC = "AUC";
     public final static String MEASURE_BALANCE = "Balance";
@@ -79,10 +81,22 @@ public class Util {
     
     public final static int SOLUTION_1 = 1;
     public final static int SOLUTION_2 = 2;
-
+    
+    public final static String ART_FOREST = "ARTForests";
+    public final static String KNN = "kNN";
+            
+    public final static String NB = "NB";
+    public final static String RF = "RND_FOR";
+    public final static String J48 = "C45";
+    public final static String IBK = "K_NN";
+    public final static String SMO = "SVM";
+    public final static String MLP = "MLP";
+    public final static String ABM = "AB";
+    public final static String XGB = "XGB";
+    
     public final static String algorithms = ClassifierRanking.NB+CSV_SEPARATOR+ClassifierRanking.RF+CSV_SEPARATOR+ClassifierRanking.J48+CSV_SEPARATOR+ClassifierRanking.IBK+CSV_SEPARATOR+ClassifierRanking.SMO+CSV_SEPARATOR+ClassifierRanking.MLP;
     
-    public final static int algorithmAmount = 5;
+    public final static int algorithmAmount = 8;
     
     public static boolean IS_AUC = true;
 
@@ -90,6 +104,19 @@ public class Util {
         double pd;
         double TP = evaluation.numTruePositives(Util.DEFECTIVE);
         double FN = evaluation.numFalseNegatives(Util.DEFECTIVE);
+        
+        /*
+        logger.debug("TP DEFECTIVE -> "+evaluation.numTruePositives(Util.DEFECTIVE));
+        logger.debug("TP FREEEEEEE -> "+evaluation.numTruePositives(Util.DEFECT_FREE));
+        logger.debug("FN DEFECTIVE -> "+evaluation.numFalseNegatives(Util.DEFECTIVE));
+        logger.debug("FN FREEEEEEE -> "+evaluation.numFalseNegatives(Util.DEFECT_FREE));
+        
+        logger.debug("TN DEFECTIVE -> "+evaluation.numTrueNegatives(Util.DEFECTIVE));
+        logger.debug("TN FREEEEEEE -> "+evaluation.numTrueNegatives(Util.DEFECT_FREE));
+        logger.debug("FP DEFECTIVE -> "+evaluation.numFalsePositives(Util.DEFECTIVE));
+        logger.debug("FP FREEEEEEE -> "+evaluation.numFalsePositives(Util.DEFECT_FREE));
+        */
+        
         pd = TP / (TP + FN);
         return pd;
     }
@@ -110,6 +137,14 @@ public class Util {
         return balance;
     }
 
+    public static float getBalance(float pd, float pf) {
+        float balance;
+        float pd2 = new Double(Math.pow(1 - pd, 2)).floatValue();
+        float pf2 = new Double(Math.pow(0 - pf, 2)).floatValue();
+        balance = new Double(1 - ((Math.sqrt(pd2 + pf2)) / Math.sqrt(2))).floatValue();
+        return balance;
+    }
+    
     public static int[] getRankings() {
         int[] rankings = new int[Util.algorithmAmount];
         for (int i = 0; i < Util.algorithmAmount; i++) {
@@ -197,10 +232,14 @@ public class Util {
         return getFilePath(base, fileName, 0);
     }
     
+    public static String getFilePath(String base, String fileName, int k) {
+        return getFilePath(base, fileName, k, Util.META_BASE_TYPE);
+    }
+    
     //Util.RANKING_EXP + Util.DB_TYPE + Util.SEARCH_TYPE + "/RankingAleatoryBy"+measure+"-" +Util.algorithmAmount + ".csv"
     //Util.RANKING_RESULT + Util.DB_TYPE+ Util.SEARCH_TYPE + "/" + Util.META_BASE_TYPE +"/rankingAlgorithmBy"+ measure + "-" + Util.algorithmAmount + "-K-1.csv"
-    public static String getFilePath(String base, String fileName, int k) {
-        String fullName = base + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + Util.META_BASE_TYPE + "/" + fileName + Util.MEASURE_TYPE + "-" + Util.algorithmAmount;
+    public static String getFilePath(String base, String fileName, int k, String metaBaseType) {
+        String fullName = base + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + metaBaseType + "/" + fileName + Util.MEASURE_TYPE + "-" + Util.algorithmAmount;
         if (k > 0) {
             fullName += "-K-"+k;
         }

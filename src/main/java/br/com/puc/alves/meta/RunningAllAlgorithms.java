@@ -64,21 +64,14 @@ public class RunningAllAlgorithms {
     }
     
     private void init(Classifier classifier, String algorithmName) throws Exception {
-        Instances instances = ConverterUtils.DataSource.read(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE + "/metaFeatures-"+Util.algorithmAmount+".csv");
+        Instances instances = ConverterUtils.DataSource.read(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE + "/metaFeaturesWithBestAlgorithm-"+Util.MEASURE_TYPE+"-"+Util.algorithmAmount+".csv");
         Instances trainInstances = Util.getTrainInstancesBestAlgorithm(instances);
         
+        //Remove attributes that were the measure of the execution algorithms
         while (instances.numAttributes() > 24) {
-            if (instances.numAttributes() > 25) {
-                instances.deleteAttributeAt(instances.numAttributes()-3);
-            } else {
-                if (Util.MEASURE_TYPE.equals(Util.MEASURE_AUC)) {
-                    instances.deleteAttributeAt(instances.numAttributes()-1);
-                } else {
-                    instances.deleteAttributeAt(instances.numAttributes()-2);
-                }
-            }
-            
+            instances.deleteAttributeAt(instances.numAttributes()-2);
         }
+        
         //Select attribute by category (STATLOG/COMPLEXITY/NONE)
         Util.getInstancesFiltered(instances);
         
@@ -169,12 +162,12 @@ public class RunningAllAlgorithms {
         Instances instancesMLP = ConverterUtils.DataSource.read(Util.BEST_ALGORITHM_PREDICT + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + Util.META_BASE_TYPE + "/" + ClassifierRanking.MLP + "-" + Util.algorithmAmount + "-" + Util.MEASURE_TYPE + ".arff");
         Instances instancesABM = ConverterUtils.DataSource.read(Util.BEST_ALGORITHM_PREDICT + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + Util.META_BASE_TYPE + "/" + ClassifierRanking.ABM + "-" + Util.algorithmAmount + "-" + Util.MEASURE_TYPE + ".arff");
         List<Bean> list = new ArrayList<>();
+        List<String> lines = Util.getCsvToList(Util.getFilePath(Util.RANKING_RESULT, "kNN", 3, Util.META_BASE_NONE));
         Bean bean;
-        Instances instancesMetaBase = new ConverterUtils.DataSource(Util.META_NIVEL + Util.DB_TYPE +Util.SEARCH_TYPE+ "/metaFeatures-" +Util.algorithmAmount + ".csv").getDataSet();
         for (int n = 0; n < instancesNB.numInstances(); n++) {
             //String dataSetName = instance.stringValue(0);
             bean = new Bean();
-            bean.setDataSetName(instancesMetaBase.get(n).stringValue(0));
+            bean.setDataSetName(lines.get(n+1).split(Util.CSV_SEPARATOR)[0]);
             bean.setClazz(instancesNB.get(n).stringValue(Util.getPredictorPosition(0)));
             bean.setNb(instancesNB.get(n).stringValue(Util.getPredictorPosition(1)));
             bean.setRf(getAlgorithmPredicted(instancesRF, n));
@@ -186,8 +179,7 @@ public class RunningAllAlgorithms {
             //bean.setPredicted();
             list.add(bean);
         }
-        
-        List<String> lines = Util.getCsvToList(Util.getFilePath(Util.RANKING_RESULT, "rankingAlgorithmBy", 1));
+                
         List<double[]> results = new ArrayList<>();
         List<String> dataSets = new ArrayList<>();
         double[] rankTotal = new double[Util.algorithmAmount+1];
@@ -245,7 +237,7 @@ public class RunningAllAlgorithms {
     private double[] getRank(String[] csvLineResult) {
         double[] rank = new double[Util.algorithmAmount+1];
         for (int i = 0; i < Util.algorithmAmount; i++) {
-            rank[i] = Integer.parseInt(csvLineResult[i*2+1]);
+            rank[i] = Double.valueOf(csvLineResult[i*2+1]);
         }
         return rank;
     }
@@ -261,7 +253,7 @@ public class RunningAllAlgorithms {
         {
             try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.getFilePath(Util.BEST_ALGORITHM_EXP, "BestAlgorithmVsRankMediaAllAlgorithms")), "UTF-8"))) {
                 bw.write("dataSetName"+CSV_SEPARATOR+"RANK-NB"+CSV_SEPARATOR+"RANK-RF"+CSV_SEPARATOR+"RANK-J48"+CSV_SEPARATOR+"RANK-IBK"+CSV_SEPARATOR
-                        +"RANK-SMO"+CSV_SEPARATOR+"RANK-MLP"+CSV_SEPARATOR+"RANK-ABM"+CSV_SEPARATOR+"RANK-ALL"+CSV_SEPARATOR);
+                        +"RANK-SMO"+CSV_SEPARATOR+"RANK-MLP"+CSV_SEPARATOR+"RANK-ABM"+CSV_SEPARATOR+"RANK-XGB"+CSV_SEPARATOR+"RANK-ALL"+CSV_SEPARATOR);
                 bw.newLine();
                 StringBuffer oneLine;
                 double[] rankMedio;
@@ -403,27 +395,32 @@ public class RunningAllAlgorithms {
         private String predicted;
         private final int[] majoritory = new int[Util.algorithmAmount];
 
+        
+        
         private void setMajoritory(String predicted) {
-            if (predicted.equals(ClassifierRanking.NB)) {
+            if (predicted.equals(Util.NB)) {
                 majoritory[0] ++;
             }
-            if (predicted.equals(ClassifierRanking.RF)) {
+            if (predicted.equals(Util.RF)) {
                 majoritory[1] ++;
             }
-            if (predicted.equals(ClassifierRanking.J48)) {
+            if (predicted.equals(Util.J48)) {
                 majoritory[2] ++;
             }
-            if (predicted.equals(ClassifierRanking.IBK)) {
+            if (predicted.equals(Util.IBK)) {
                 majoritory[3] ++;
             }
-            if (predicted.equals(ClassifierRanking.SMO)) {
+            if (predicted.equals(Util.SMO)) {
                 majoritory[4] ++;
             }
-            if (predicted.equals(ClassifierRanking.MLP)) {
+            if (predicted.equals(Util.MLP)) {
                 majoritory[5] ++;
             }
-            if (predicted.equals(ClassifierRanking.ABM)) {
+            if (predicted.equals(Util.ABM)) {
                 majoritory[6] ++;
+            }
+            if (predicted.equals(Util.XGB)) {
+                majoritory[7] ++;
             }
         }
         
@@ -495,6 +492,7 @@ public class RunningAllAlgorithms {
 
         public void setAbm(String abm) {
             this.abm = abm;
+            this.setMajoritory(abm);
         }        
 
         public String getPredicted() {

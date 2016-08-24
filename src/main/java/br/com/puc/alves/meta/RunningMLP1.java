@@ -135,7 +135,7 @@ public class RunningMLP1 {
         //        + "-fold Cross-validation ===", true));
         // output "enriched" dataset
         // DataSink.write(Utils.getOption("o", args), predictedData);
-        ConverterUtils.DataSink.write(Util.BEST_ALGORITHM_PREDICT + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + Util.META_BASE_TYPE + "/" + MLAlgorithmEnum.MLP_1.name()  + "-" + Util.algorithmAmount + "-" + Util.MEASURE_TYPE + ".arff", predictedData);
+        //ConverterUtils.DataSink.write(Util.BEST_ALGORITHM_PREDICT + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + Util.META_BASE_TYPE + "/" + MLAlgorithmEnum.MLP_1.name()  + "-" + Util.algorithmAmount + "-" + Util.MEASURE_TYPE + ".arff", predictedData);
         return predictedData;
     }
     

@@ -15,6 +15,7 @@ import weka.core.converters.ConverterUtils.DataSource;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.logging.Level;
 import org.apache.log4j.Logger;
 import weka.attributeSelection.BestFirst;
 import weka.attributeSelection.CfsSubsetEval;
@@ -47,6 +48,7 @@ public class MetaBase {
             //final File files = ;
             File[] files = new File(Util.DB_DF_PRED + Util.DB_TYPE + Util.SEARCH_TYPE).listFiles();
             Arrays.sort(files, (Object f1, Object f2) -> ((File) f1).getName().toLowerCase().compareTo(((File) f2).getName().toLowerCase()));
+            //Arrays.sort(files, Collections.reverseOrder());
             Instances instances;
             MetaFeatures metaFeatures;
             for (final File file : files) {
@@ -54,7 +56,7 @@ public class MetaBase {
                     fileName = file.getName();
                     logger.debug("Dataset: "+fileName);
                     metaFeatures = new MetaFeatures();
-                    metaFeatures.setDataSetName(fileName);
+                    metaFeatures.setDataSetName(fileName.replace(".arff", ""));
                     instances = new DataSource(Util.DB_DF_PRED + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + fileName).getDataSet();
                     if (instances.classIndex() == -1) {
                         instances.setClassIndex(instances.numAttributes() -1);
@@ -106,6 +108,7 @@ public class MetaBase {
         }
     }
     
+    /*
     private void generateClassifier(Instances instances, MetaFeatures metaFeatures) {
         NaiveBayes naiveBayes = new NaiveBayes();
         RandomForest randomForest = new RandomForest();
@@ -115,6 +118,8 @@ public class MetaBase {
         SMO smo = new SMO();
         MultilayerPerceptron multilayerPerceptron = new MultilayerPerceptron();
         AdaBoostM1 adaBoostM1 = new AdaBoostM1();
+        OneR oneR = new OneR();
+        JRip jRip = new JRip();
         
         List<ClassifierRanking> listClassifiers = new ArrayList<>();
         
@@ -126,7 +131,8 @@ public class MetaBase {
             listClassifiers.add(getEvaluation(instances, smo, Util.numFolds, Util.numIterations, ClassifierRanking.SMO));
             listClassifiers.add(getEvaluation(instances, multilayerPerceptron, Util.numFolds, Util.numIterations, ClassifierRanking.MLP));
             listClassifiers.add(getEvaluation(instances, adaBoostM1, Util.numFolds, Util.numIterations, ClassifierRanking.ABM));
-            //Collections.sort(listClassifiers);
+            //listClassifiers.add(getEvaluation(instances, oneR, Util.numFolds, Util.numIterations, ClassifierRanking.ONE_R));
+            //listClassifiers.add(getEvaluation(instances, jRip, Util.numFolds, Util.numIterations, ClassifierRanking.RIPPER));
         } catch (Exception e) {
             logger.error("Exception is", e);
         }
@@ -150,60 +156,107 @@ public class MetaBase {
         }
         
     }
+    */
     
-    private ClassifierRanking getEvaluation(Instances instances, Classifier classifierBase, int folds, int iterations, String classifierName) throws Exception {
+    @SuppressWarnings("UnusedAssignment")
+    private Algorithm getEvaluation(String dataSetName, Instances instances, MLAlgorithmEnum algorithmEnum, int folds, int iterations) throws Exception {
         double auc = 0D;
         double pd = 0D;
         double pf = 0D;
+        double balance = 0D;
+        
         List<Evaluation> lstEvaluation = new ArrayList<>(iterations);
         Evaluation evaluation;
         Random random;
-                
+        
+        XGBostMain xgbm = null;
+        Classifier classifierBase = null;
+        switch(algorithmEnum) {
+            case AB : classifierBase = new AdaBoostM1();
+            case C45 : classifierBase = new J48();
+            case K_NN : classifierBase = new IBk(3);
+            case MLP : classifierBase = new MultilayerPerceptron();
+            case NB : classifierBase = new NaiveBayes();
+            case RND_FOR : classifierBase = new RandomForest();
+            case SVM : classifierBase = new SMO();
+            case XGB : xgbm = new XGBostMain();
+            
+            default: if (classifierBase == null) {
+                classifierBase = new RandomForest();
+            }
+        }
+        
+        double[] metrics = null;
         for (int i = 1; i <= iterations; i ++) {
-            evaluation = new Evaluation(instances);
-            random = new Random(i);
-            evaluation.crossValidateModel(classifierBase, instances, folds, random);
-            auc = auc + evaluation.areaUnderROC(Util.DEFECTIVE);
-            pd = pd + Util.getPD(evaluation);
-            pf = pf + Util.getPF(evaluation);
-            lstEvaluation.add(evaluation);
+            if (xgbm != null) {
+                metrics = xgbm.getXGBoostEvaluating(dataSetName, i, folds);
+                auc = auc + metrics[0];
+                balance = balance + metrics[1];
+            } else {
+                evaluation = new Evaluation(instances);
+                random = new Random(i);
+                evaluation.crossValidateModel(classifierBase, instances, folds, random);
+                auc = auc + evaluation.areaUnderROC(Util.DEFECTIVE);
+                pd = pd + Util.getPD(evaluation);
+                pf = pf + Util.getPF(evaluation);
+                lstEvaluation.add(evaluation);
+            }
         }
         auc = auc / iterations;
         logger.debug(" AUC = " + auc);
-        double balance = Util.getBalance(pd / iterations, pf / iterations);
-        ClassifierRanking classifierRanking = new ClassifierRanking(classifierName, auc, balance, 0D, 0D, lstEvaluation);
-        return classifierRanking;
+        if (xgbm == null) {
+            balance = Util.getBalance(pd / iterations, pf / iterations);
+        } else {
+            balance = balance / iterations;
+        }
+        logger.debug(" Balance = " + balance);
+        Algorithm algorithm = new Algorithm(algorithmEnum, auc, balance, lstEvaluation);
+        
+        return algorithm;
+    }
+    
+    private void saveClassifier(String dataSetName, Algorithm algorithm) {
+        ObjectOutputStream objectOutputStream = null;
+        FileOutputStream outputStream;
+        try{
+            outputStream = new FileOutputStream(Util.BASE_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ dataSetName + "-" + algorithm.getName() + ".classifiers", true);
+            objectOutputStream = new ObjectOutputStream(outputStream);
+            objectOutputStream.writeObject(algorithm);
+        } catch (Exception e) {
+                logger.error("Exception is", e);
+        } finally {
+                if(objectOutputStream  != null){
+                    try {
+                        objectOutputStream.close();
+                    } catch (IOException ex) {
+                        logger.error("Exception is", ex);
+                    }
+                 } 
+        }
     }
     
     private void getClassifier(Instances instances, MetaFeatures metaFeatures) {
         ObjectInputStream objectinputstream = null;
         FileInputStream streamIn = null;
         try {
-            File file = new File(Util.BASE_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ metaFeatures.getDataSetName() + ".classifiers");
-            if (!file.exists()) {
-                generateClassifier(instances, metaFeatures);
-            }
-            streamIn = new FileInputStream(Util.BASE_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ metaFeatures.getDataSetName() + ".classifiers");
-            objectinputstream = new ObjectInputStream(streamIn);
-            List<ClassifierRanking> listClassifiers = (List<ClassifierRanking>) objectinputstream.readObject();
-            /*
-            for (ClassifierRanking cr : listClassifiers) {
-                if (!algorithms.contains(cr.getName())) {
-                    listClassifiers.remove(cr);
-                    break;
+            List<Algorithm> listClassifiers = new ArrayList();
+            Algorithm algorithm;
+            
+            for (MLAlgorithmEnum algorithmEnum : MLAlgorithmEnum.values()) {
+                File file = new File(Util.BASE_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ metaFeatures.getDataSetName() + "-" + algorithmEnum + ".classifiers");
+                if (!file.exists()) {
+                    algorithm = getEvaluation(metaFeatures.getDataSetName(), instances, algorithmEnum, Util.numFolds, Util.numIterations);
+                    saveClassifier(metaFeatures.getDataSetName(), algorithm);
+                } else {
+                    streamIn = new FileInputStream(file);
+                    objectinputstream = new ObjectInputStream(streamIn);
+                    algorithm = (Algorithm) objectinputstream.readObject();
                 }
+                listClassifiers.add(algorithm);
             }
-            */
-            Util.IS_AUC = true;
-            Collections.sort(listClassifiers);
-            setRankingAUC(listClassifiers);
-            metaFeatures.setClassifierAUC(listClassifiers.get(0));
-            Util.IS_AUC = false;
-            Collections.sort(listClassifiers);
-            setRankingBalance(listClassifiers);
-            metaFeatures.setClassifierBalance(listClassifiers.get(0));
-            metaFeatures.setRankings(listClassifiers);
-        } catch (IOException | ClassNotFoundException e) {
+                                    
+            metaFeatures.setClassifiers(listClassifiers);
+        } catch (Exception e) {
             logger.error("Exception is", e);
         } finally {
             try {
@@ -214,58 +267,7 @@ public class MetaBase {
             }
         }
     }   
-    
-    private void setRankingAUC(List<ClassifierRanking> listClassifiers) {
-        for (int i = 0; i < listClassifiers.size(); i++) {
-            if (i == (listClassifiers.size() - 1)) {
-                listClassifiers.get(i).setRankingAUC(i+1);
-            } else if (listClassifiers.get(i).getAreaROC() > listClassifiers.get(i+1).getAreaROC()) {
-                listClassifiers.get(i).setRankingAUC(i+1);
-            } else {
-                int n = i;
-                int size = 1;
-                while (listClassifiers.get(n).getAreaROC() < listClassifiers.get(n+1).getAreaROC()) {
-                    size ++;
-                }
-                double ranking = getRanking(i+1, size);
-                for (int j = i; j < (i + size); j++) {
-                    listClassifiers.get(j).setRankingAUC(ranking);
-                }
-                i = i + size;
-            }
-        }
         
-    }
-    
-    private void setRankingBalance(List<ClassifierRanking> listClassifiers) {
-        for (int i = 0; i < listClassifiers.size(); i++) {
-            if (i == (listClassifiers.size() - 1)) {
-                listClassifiers.get(i).setRankingBalance(i+1);
-            } else if (listClassifiers.get(i).getBalance() > listClassifiers.get(i+1).getBalance()) {
-                listClassifiers.get(i).setRankingBalance(i+1);
-            } else {
-                int n = i;
-                int size = 1;
-                while (listClassifiers.get(n).getBalance() < listClassifiers.get(n+1).getBalance()) {
-                    size ++;
-                }
-                double ranking = getRanking(i+1, size);
-                for (int j = i; j < (i + size); j++) {
-                    listClassifiers.get(j).setRankingBalance(ranking);
-                }
-                i = i + size;
-            }
-        }
-        
-    }
-    private double getRanking(int pos, int size) {
-        double ranking = 0;
-        for (int i = pos; i < (pos + size); i++) {
-            ranking = ranking + i;
-        }
-        return ranking / size;
-    }
-    
     private void getStatLogFeatures(Instances instances, MetaFeatures metaFeatures) throws Exception {
         StatLogFeatures statLogFeatures = new StatLogFeatures(instances, metaFeatures);
     }
@@ -342,206 +344,110 @@ public class MetaBase {
             }
         }
         runtime.exec("rm -rf "+Util.DCOL + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + fileName+".log");
-    }
-
-    private double[] getMeasures(List<ClassifierRanking> rankings, boolean isAUC) {
-        double[] measures = new double[Util.algorithmAmount*2];
-        ClassifierRanking classifierRanking;
-        double ranking;
-        double measure;
-        for (ClassifierRanking ranking1 : rankings) {
-            classifierRanking = ranking1;
-            ranking = classifierRanking.getRankingBalance();
-            measure = classifierRanking.getBalance();
-            if (isAUC) {
-                ranking = classifierRanking.getRankingAUC();
-                measure = classifierRanking.getAreaROC();
-            }
-            if (classifierRanking.getName().equals(ClassifierRanking.NB)) {
-                measures[0] = ranking;
-                measures[1] = measure;
-            }
-            if (classifierRanking.getName().equals(ClassifierRanking.RF) && Util.algorithms.contains(ClassifierRanking.RF)) {
-                measures[2] = ranking;
-                measures[3] = measure;
-            }
-            if (classifierRanking.getName().equals(ClassifierRanking.J48)) {
-                measures[4] = ranking;
-                measures[5] = measure;
-            }
-            if (classifierRanking.getName().equals(ClassifierRanking.IBK)) {
-                measures[6] = ranking;
-                measures[7] = measure;
-            }
-            if (classifierRanking.getName().equals(ClassifierRanking.SMO)) {
-                measures[8] = ranking;
-                measures[9] = measure;
-            }
-            if (classifierRanking.getName().equals(ClassifierRanking.MLP)) {
-                measures[10] = ranking;
-                measures[11] = measure;
-            }
-            if (classifierRanking.getName().equals(ClassifierRanking.ABM)) {
-                measures[12] = ranking;
-                measures[13] = measure;
-            }
-        }
-        return measures;
-    }
+    }   
     
-    private void writeToCSV(List<MetaFeatures> metaFeaturesList)
-    {
-        try
-        {
-            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ "metaFeatures-solution" +Util.SOLUTION_1+ ".csv"), "UTF-8"))) {
-                StringBuffer oneLine = new StringBuffer();
-                
-                Field[] fields = MetaFeatures.class.getFields();
-                for (Field field : fields) {
-                    if (!field.getName().equals("classifierAUC") && !field.getName().equals("classifierBalance") && !field.getName().equals("rankings")) {
-                        oneLine.append(field.getName());
-                        oneLine.append(Util.CSV_SEPARATOR);
-                    }
+    private void writeToCSV(List<MetaFeatures> metaFeaturesList) {
+        
+        BufferedWriter bwAUC;
+        BufferedWriter bwBalance;
+        try {
+            bwAUC = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ "metaFeatures-"+Util.MEASURE_AUC +"-"+ Util.algorithmAmount + ".csv"), "UTF-8"));
+            bwBalance = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ "metaFeatures-"+Util.MEASURE_BALANCE +"-"+ Util.algorithmAmount + ".csv"), "UTF-8"));
+            StringBuffer oneLine = new StringBuffer();
+            
+            Field[] fields = MetaFeatures.class.getFields();
+            for (Field field : fields) {
+                if (!field.getName().equals("classifiers")) {
+                    oneLine.append(field.getName());
+                    oneLine.append(Util.CSV_SEPARATOR);
                 }
-                oneLine.append("NB-RANK-AUC");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("NB-AUC");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("RF-RANK-AUC");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("RF-AUC");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("J48-RANK-AUC");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("J48-AUC");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("IBK-RANK-AUC");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("IBK-AUC");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("SMO-RANK-AUC");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("SMO-AUC");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("MLP-RANK-AUC");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("MLP-AUC");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("ABM-RANK-AUC");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("ABM-AUC");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("NB-RANK-Balance");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("NB-Balance");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("RF-RANK-Balance");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("RF-Balance");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("J48-RANK-Balance");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("J48-Balance");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("IBK-RANK-Balance");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("IBK-Balance");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("SMO-RANK-Balance");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("SMO-Balance");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("MLP-RANK-Balance");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("MLP-Balance");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("ABM-RANK-Balance");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("ABM-Balance");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("classifier-AUC");
-                oneLine.append(Util.CSV_SEPARATOR);
-                oneLine.append("classifier-Balance");
-                
-                bw.write(oneLine.toString());
-                bw.newLine();
-                
-                double[] measuresAUC;
-                double[] measuresBalance;
-                for (MetaFeatures metaFeatures : metaFeaturesList)
-                {
-                    measuresAUC = getMeasures(metaFeatures.getRankings(), true);
-                    measuresBalance = getMeasures(metaFeatures.getRankings(), false);
-                    
-                    oneLine = new StringBuffer();
-                    oneLine.append(metaFeatures.getDataSetName());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getExample());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getAttribute());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getClazz());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getBinaryAttributes());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getF1());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getF1v());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getF2());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getF3());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getF4());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getL1());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getL2());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getL3());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getN1());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getN2() == -100D ? "?" : metaFeatures.getN2());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getN3());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getN4());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getT1());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getT2());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getSkew());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getKurtosis());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getMultipleCorrelation());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getsDRatio() == -100D ? "?" : metaFeatures.getsDRatio());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    for (double measure : measuresAUC) {
-                        oneLine.append(measure);
-                        oneLine.append(Util.CSV_SEPARATOR);
-                    }
-                    
-                    for (double measure : measuresBalance) {
-                        oneLine.append(measure);
-                        oneLine.append(Util.CSV_SEPARATOR);
-                    }
-                    
-                    oneLine.append(metaFeatures.getClassifierAUC());
-                    oneLine.append(Util.CSV_SEPARATOR);
-                    oneLine.append(metaFeatures.getClassifierBalance());
-                    
-                    bw.write(oneLine.toString());
-                    bw.newLine();
-                }
-                bw.flush();
             }
+            
+            for (MLAlgorithmEnum e : MLAlgorithmEnum.values()) {
+                oneLine.append(e);
+                oneLine.append(Util.CSV_SEPARATOR);
+            }
+            
+            bwAUC.write(oneLine.toString());
+            bwAUC.newLine();
+            
+            bwBalance.write(oneLine.toString());
+            bwBalance.newLine();
+            
+            for (MetaFeatures metaFeatures : metaFeaturesList)
+            {
+                oneLine = new StringBuffer();
+                oneLine.append(metaFeatures.getDataSetName());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getExample());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getAttribute());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getClazz());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getBinaryAttributes());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getF1());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getF1v());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getF2());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getF3());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getF4());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getL1());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getL2());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getL3());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getN1());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getN2() == -100D ? "?" : metaFeatures.getN2());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getN3());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getN4());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getT1());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getT2());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getSkew());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getKurtosis());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getMultipleCorrelation());
+                oneLine.append(Util.CSV_SEPARATOR);
+                oneLine.append(metaFeatures.getsDRatio() == -100D ? "?" : metaFeatures.getsDRatio());
+                oneLine.append(Util.CSV_SEPARATOR);
+                
+                StringBuilder oneLineAUC = new StringBuilder();
+                StringBuilder oneLineBalance = new StringBuilder();
+                
+                metaFeatures.getClassifiers().stream().map((algorithm) -> {
+                    oneLineAUC.append(algorithm.getAreaROC());
+                    return algorithm;
+                }).map((algorithm) -> {
+                    oneLineAUC.append(Util.CSV_SEPARATOR);
+                    oneLineBalance.append(algorithm.getBalance());
+                    return algorithm;
+                }).forEach((_item) -> {
+                    oneLineBalance.append(Util.CSV_SEPARATOR);
+                });
+                
+                bwAUC.write(oneLine.toString()+oneLineAUC.toString());
+                bwAUC.newLine();         
+                
+                bwBalance.write(oneLine.toString()+oneLineBalance.toString());
+                bwBalance.newLine();
+            }
+            bwAUC.flush();
+            bwBalance.flush();
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(MetaBase.class.getName()).log(Level.SEVERE, null, ex);
         }
-        catch (UnsupportedEncodingException e) {}
-        catch (FileNotFoundException e){}
-        catch (IOException e){}
     }
 }

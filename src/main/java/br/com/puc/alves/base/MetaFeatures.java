@@ -88,10 +88,7 @@ public class MetaFeatures {
     public double multipleCorrelation;
     public double sDRatio;
     
-    public List<ClassifierRanking> rankings;
-
-    public ClassifierRanking classifierAUC;
-    public ClassifierRanking classifierBalance;
+    public List<Algorithm> classifiers;
     
     public String getDataSetName() {
         return dataSetName;
@@ -277,14 +274,14 @@ public class MetaFeatures {
         this.sDRatio = sDRatio;
     }
 
-    public List<ClassifierRanking> getRankings() {
-        return rankings;
+    public List<Algorithm> getClassifiers() {
+        return classifiers;
     }
 
-    public void setRankings(List<ClassifierRanking> rankings) {
-        this.rankings = rankings;
+    public void setClassifiers(List<Algorithm> classifiers) {
+        this.classifiers = classifiers;
     }
-
+/*
     public ClassifierRanking getClassifierAUC() {
         return classifierAUC;
     }
@@ -300,11 +297,9 @@ public class MetaFeatures {
     public void setClassifierBalance(ClassifierRanking classifierBalance) {
         this.classifierBalance = classifierBalance;
     }
-
-    
-
+*/
     @Override
     public String toString() {
-        return "MetaFeatures{" + "dataSetName=" + dataSetName + ", example=" + example + ", attribute=" + attribute + ", clazz=" + clazz + ", binaryAttributes=" + binaryAttributes + ", F1=" + F1 + ", F1v=" + F1v + ", F2=" + F2 + ", F3=" + F3 + ", F4=" + F4 + ", L1=" + L1 + ", L2=" + L2 + ", L3=" + L3 + ", N1=" + N1 + ", N2=" + N2 + ", N3=" + N3 + ", N4=" + N4 + ", T1=" + T1 + ", T2=" + T2 + ", skew=" + skew + ", kurtosis=" + kurtosis + ", multipleCorrelation=" + multipleCorrelation + ", sDRatio=" + sDRatio + ", rankings=" + rankings + ", classifierAUC=" + classifierAUC + ", classifierBalance=" + classifierBalance + '}';
+        return "MetaFeatures{" + "dataSetName=" + dataSetName + ", example=" + example + ", attribute=" + attribute + ", clazz=" + clazz + ", binaryAttributes=" + binaryAttributes + ", F1=" + F1 + ", F1v=" + F1v + ", F2=" + F2 + ", F3=" + F3 + ", F4=" + F4 + ", L1=" + L1 + ", L2=" + L2 + ", L3=" + L3 + ", N1=" + N1 + ", N2=" + N2 + ", N3=" + N3 + ", N4=" + N4 + ", T1=" + T1 + ", T2=" + T2 + ", skew=" + skew + ", kurtosis=" + kurtosis + ", multipleCorrelation=" + multipleCorrelation + ", sDRatio=" + sDRatio + ", rankings=" + '}';
     }
 }

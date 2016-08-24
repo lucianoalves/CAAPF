@@ -48,7 +48,7 @@ public class RankingBalance {
             double[] rankings;
             spearmans = new LinkedHashMap<>(30);
             Instances instancesRF = null;
-            Instances instancesMetaBase = new DataSource(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE + "/metaFeatures-"+ Util.algorithmAmount + ".csv").getDataSet();
+            Instances instancesMetaBase = DataSource.read(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + "metaFeatures-"+Util.MEASURE_BALANCE+"-"+Util.algorithmAmount +".csv");
             for (int k = 1; k < 2; k++) {
                 lstRankings = new LinkedHashMap<>(instancesMetaBase.size());
                 Instances instancesNB = getInstances(ClassifierRanking.NB, k);

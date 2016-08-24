@@ -7,6 +7,8 @@ package br.com.puc.alves.base;
 
 import br.com.puc.alves.utils.Util;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -18,6 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.log4j.Logger;
+import weka.core.Instances;
+import weka.core.converters.ArffSaver;
+import weka.core.converters.CSVLoader;
 
 /**
  *
@@ -54,6 +59,7 @@ public class MLRecommendRankingMain {
             }
         });
         main.writeToCSV(rankings, listDataSets);
+        main.writeToCSVRankByOrder(rankings, listDataSets);
     }
     
     private void setOrderMLA(List<MLAlgorithmBean> list) {
@@ -73,30 +79,78 @@ public class MLRecommendRankingMain {
         return rank;
     }
     
-    private void writeToCSV(List<String> rankings, Map<String, List<MLAlgorithmBean>> map)
+    private void writeToCSVRankByOrder(List<String> rankings, Map<String, List<MLAlgorithmBean>> map)
     {
         try
         {
-            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ "metaFeaturesWithRankingTest-"+Util.MEASURE_TYPE+"-"+Util.algorithmAmount +".csv"), "UTF-8"))) {
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ "metaFeaturesWithRankingByOrder-"+Util.MEASURE_TYPE+"-"+Util.algorithmAmount +".csv"), "UTF-8"))) {
                 for (String s : rankings) {
                     bw.write(s);
-                    bw.write(Util.CSV_SEPARATOR);
+                    //bw.write(Util.CSV_SEPARATOR);
                     if (!s.contains("dataSetName")) {                        
                         int rank;
                         List<MLAlgorithmBean> list = map.get(s.split(",")[0]);
+                        //bw.write(Util.CSV_SEPARATOR);
                         bw.write("'");
                         for (int i = 0; i < list.size(); i++) {
                             rank = new Double(getRankByAlgorithm(list, MLAlgorithmEnum.values()[i])).intValue();
                             if (i > 0) {
-                                bw.write(",");
+                                bw.write(Util.CSV_SEPARATOR);
                             }
-                            bw.write(String.valueOf(rank));                            
+                            bw.write(String.valueOf(rank));
                         }
                         bw.write("'");
                     } else {
-                        for (MLAlgorithmEnum e : MLAlgorithmEnum.values()) {
+                        bw.write(Util.CSV_SEPARATOR);
+                        bw.write("RANK");
+                    }
+                    bw.newLine();
+                }
+                
+                bw.flush();
+            }
+            
+            CSVLoader csvLoader = new CSVLoader();
+            csvLoader.setSource(new FileInputStream(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ "metaFeaturesWithRankingByOrder-"+Util.MEASURE_TYPE+"-"+Util.algorithmAmount +".csv"));
+                        
+            ArffSaver arffSaver = new ArffSaver();
+            
+            Instances instances = csvLoader.getDataSet();
+            for (int i = 0; i < Util.algorithmAmount; i++) {
+                instances.deleteAttributeAt(instances.numAttributes() -2);
+            }
+            
+            arffSaver.setInstances(instances);
+            arffSaver.setFile(new File(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ "metaFeaturesWithRankingByOrder-"+Util.MEASURE_TYPE+"-"+Util.algorithmAmount +".arff"));
+            arffSaver.writeBatch();
+        }
+        catch (UnsupportedEncodingException e) {}
+        catch (FileNotFoundException e){}
+        catch (IOException e){}
+    }
+    
+    private void writeToCSV(List<String> rankings, Map<String, List<MLAlgorithmBean>> map)
+    {
+        try
+        {
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ "metaFeaturesWithRanking-"+Util.MEASURE_TYPE+"-"+Util.algorithmAmount +".csv"), "UTF-8"))) {
+                for (String s : rankings) {
+                    bw.write(s);
+                    //bw.write(Util.CSV_SEPARATOR);
+                    if (!s.contains("dataSetName")) {                        
+                        int rank;
+                        List<MLAlgorithmBean> list = map.get(s.split(",")[0]);
+                        //bw.write("'");
+                        for (int i = 0; i < list.size(); i++) {
+                            rank = new Double(getRankByAlgorithm(list, MLAlgorithmEnum.values()[i])).intValue();
+                            bw.write(String.valueOf(rank));
                             bw.write(Util.CSV_SEPARATOR);
+                        }
+                        //bw.write("'");
+                    } else {
+                        for (MLAlgorithmEnum e : MLAlgorithmEnum.values()) {
                             bw.write(e.name()+"_RANK");
+                            bw.write(Util.CSV_SEPARATOR);
                         }
                     }
                     bw.newLine();

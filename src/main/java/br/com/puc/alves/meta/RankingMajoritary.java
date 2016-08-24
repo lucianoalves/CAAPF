@@ -26,9 +26,18 @@ import weka.core.Utils;
  */
 public class RankingMajoritary {
     final static Logger logger = Logger.getLogger(RankingMajoritary.class);
+    
+    private static String technicalName = "";
+    private static int k;
+    
     public static void main(String[] args) {
         try {
             RankingMajoritary rankingMajoritary = new RankingMajoritary();
+            technicalName = Util.KNN;
+            k = 3;  
+            rankingMajoritary.writeToCSVSpearman(rankingMajoritary.process());
+            technicalName = Util.ART_FOREST;
+            k = 0;  
             rankingMajoritary.writeToCSVSpearman(rankingMajoritary.process());
         } catch (Exception e) {
             logger.error("Exception is ", e);
@@ -36,7 +45,7 @@ public class RankingMajoritary {
     }
     
     public List<String[]> process() {
-        List<String> rankings = Util.getCsvToList(Util.getFilePath(Util.RANKING_RESULT, "rankingAlgorithmBy", 1));
+        List<String> rankings = Util.getCsvToList(Util.getFilePath(Util.RANKING_RESULT, technicalName, k));
         List<RankingMajoritaryBean> atualRankings = new ArrayList<>();
         RankingMajoritaryBean bean;
         for (String s : rankings) {
@@ -66,7 +75,7 @@ public class RankingMajoritary {
             results[1] = rankAtual;
             results[2] = rankMajoritory;
             results[3] = Utils.doubleToString(getSpearman(rankAtual, rankMajoritory), 3);
-            results[4] = line[Util.algorithmAmount*3+3];
+            results[4] = line[Util.algorithmAmount*2+1];
                     
             listResults.add(results);
         }
@@ -80,7 +89,7 @@ public class RankingMajoritary {
         double spearman = 0;
         double d;
         for (int i = 0; i < Util.algorithmAmount; i++) {
-            d = Integer.parseInt(rankAtual[i]) - Integer.parseInt(rankPredicted[i]);
+            d = Double.valueOf(rankAtual[i]) - Double.valueOf(rankPredicted[i]);
             spearman = spearman + d * d;
         }
         spearman = 1 - (6 * spearman / (Util.algorithmAmount * Util.algorithmAmount * Util.algorithmAmount - Util.algorithmAmount));
@@ -108,7 +117,7 @@ public class RankingMajoritary {
     private void writeToCSVSpearman(List<String[]> results) {
         try
         {
-            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.getFilePath(Util.RANKING_EXP, "RankingMajoritoryBy")), "UTF-8"))) {
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.getFilePath(Util.RANKING_EXP, "RankingMajoritory-"+technicalName+"-By")), "UTF-8"))) {
                 bw.write("dataSetName"+CSV_SEPARATOR+"RankAtual"+CSV_SEPARATOR+"RankMajoritory"+CSV_SEPARATOR+"SPR-MAJ"+CSV_SEPARATOR+"SPEARMAN");
                 bw.newLine();
                 StringBuffer oneLine;

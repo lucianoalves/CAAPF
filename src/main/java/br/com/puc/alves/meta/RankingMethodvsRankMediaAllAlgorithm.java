@@ -24,16 +24,17 @@ import weka.core.Utils;
  *
  * @author ssad
  */
-public class RankingRPCvsRankMediaAllAlgorithm {
-    final static Logger logger = Logger.getLogger(RankingRPCvsRankMediaAllAlgorithm.class);
+public class RankingMethodvsRankMediaAllAlgorithm {
+    final static Logger logger = Logger.getLogger(RankingMethodvsRankMediaAllAlgorithm.class);
     
     public static void main(String[] args) {
-        RankingRPCvsRankMediaAllAlgorithm averageRanking = new RankingRPCvsRankMediaAllAlgorithm();
+        RankingMethodvsRankMediaAllAlgorithm averageRanking = new RankingMethodvsRankMediaAllAlgorithm();
         //String measure = "AUC";
-        averageRanking.process();
+        averageRanking.process("kNN", 3);
+        averageRanking.process("ARTForests", 0);
     }
     
-    public void process() {
+    public void process(String rankMethod, int k) {
         try {
             double[] rankMedio;
             double[] rankTotal = new double[Util.algorithmAmount+1];
@@ -41,8 +42,8 @@ public class RankingRPCvsRankMediaAllAlgorithm {
             List<String> dataSets = new ArrayList<>();
             List<double[]> rankMedios = new ArrayList<>();
 
-            List<String> lines = Util.getCsvToList(Util.getFilePath(Util.RANKING_RESULT, "RPC (DecisionStump)", 0));
-
+            //List<String> lines = Util.getCsvToList(Util.getFilePath(Util.RANKING_RESULT, "RPC (DecisionStump)", 0));
+            List<String> lines = Util.getCsvToList(Util.getFilePath(Util.RANKING_RESULT, rankMethod, k));
             
             for (String l : lines) {
                 String[] r = l.split(Util.CSV_SEPARATOR);
@@ -54,7 +55,7 @@ public class RankingRPCvsRankMediaAllAlgorithm {
                 rankMedios.add(rankMedio);
             }
 
-            writeToCSV(dataSets, rankMedios, rankTotal);
+            writeToCSV(rankMethod, k, dataSets, rankMedios, rankTotal);
         } catch (Exception e) {
             logger.error("Exception is", e);
         }
@@ -115,10 +116,11 @@ public class RankingRPCvsRankMediaAllAlgorithm {
         }
     }
     
-    private void writeToCSV(List<String> dataSets, List<double[]> rankMedios, double[] rankTotal) {
+    private void writeToCSV(String rankMethod, int k, List<String> dataSets, List<double[]> rankMedios, double[] rankTotal) {
         try
         {
-            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.getFilePath(Util.RANKING_EXP, "ML-RPCvsRankMedia")), "UTF-8"))) {
+            //try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.getFilePath(Util.RANKING_EXP, "ML-RPCvsRankMedia")), "UTF-8"))) {
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.getFilePath(Util.RANKING_EXP, "ML-"+rankMethod+ (k > 0 ? "k-"+k : "")+"vsRankMedia")), "UTF-8"))) {
                 bw.write("dataSetName");
                 /*
                 for (MLAlgorithmEnum e : MLAlgorithmEnum.values()) {

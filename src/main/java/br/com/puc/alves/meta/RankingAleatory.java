@@ -23,9 +23,17 @@ import static br.com.puc.alves.utils.Util.CSV_SEPARATOR;
  * @author ssad
  */
 public class RankingAleatory {
-
+    
+    private static String technicalName = "";
+    private static int k;
+    
     public static void main(String[] args) {
         RankingAleatory validateSpearman = new RankingAleatory();
+        technicalName = Util.KNN;
+        k = 3;
+        validateSpearman.writeToCSVSpearman(validateSpearman.process());
+        technicalName = Util.ART_FOREST;
+        k = 0;
         validateSpearman.writeToCSVSpearman(validateSpearman.process());
     }
 
@@ -33,7 +41,7 @@ public class RankingAleatory {
         List<String[]> results = new ArrayList<>();
         String[] result;
         double[] rankAtual = new double[Util.algorithmAmount];
-        List<String> lines = Util.getCsvToList(Util.getFilePath(Util.RANKING_RESULT, "rankingAlgorithmBy", 1));
+        List<String> lines = Util.getCsvToList(Util.getFilePath(Util.RANKING_RESULT, technicalName, k));
         List<int[]> rankings;
         for (String l : lines) {
             String[] r = l.split(Util.CSV_SEPARATOR);
@@ -51,7 +59,7 @@ public class RankingAleatory {
                 result[i+1] = Utils.doubleToString(getSpearman(rankAtual, rankPredicted), 3);
             }
             result[31] = Utils.doubleToString(this.getMediaRanking(result, 30), 3);
-            result[32] = r[Util.algorithmAmount*3+3];
+            result[32] = r[Util.algorithmAmount*2+1];
             if (Double.valueOf(result[32]) > Double.valueOf(result[31])) {
                 result[33] = "1";
             } else {
@@ -93,7 +101,7 @@ public class RankingAleatory {
     private void writeToCSVSpearman(List<String[]> results) {
         try
         {
-            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.getFilePath(Util.RANKING_EXP, "RankingAleatoryBy")), "UTF-8"))) {
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.getFilePath(Util.RANKING_EXP, "RankingAleatory-"+technicalName+"-By")), "UTF-8"))) {
                 bw.write("dataSetName"+CSV_SEPARATOR+"SPR1"+CSV_SEPARATOR+"SPR2"+CSV_SEPARATOR+"SPR3"+CSV_SEPARATOR+"SPR4"+CSV_SEPARATOR+"SPR5"+CSV_SEPARATOR
                         +"SPR6"+CSV_SEPARATOR+"SPR7"+CSV_SEPARATOR+"SPR8"+CSV_SEPARATOR+"SPR9"+CSV_SEPARATOR+"SPR10"+CSV_SEPARATOR
                         +"SPR11"+CSV_SEPARATOR+"SPR12"+CSV_SEPARATOR+"SPR13"+CSV_SEPARATOR+"SPR14"+CSV_SEPARATOR+"SPR15"+CSV_SEPARATOR

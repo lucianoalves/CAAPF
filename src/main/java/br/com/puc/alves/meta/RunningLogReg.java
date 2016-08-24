@@ -121,7 +121,7 @@ public class RunningLogReg {
         //        + "-fold Cross-validation ===", true));
         // output "enriched" dataset
         // DataSink.write(Utils.getOption("o", args), predictedData);
-        ConverterUtils.DataSink.write(Util.BEST_ALGORITHM_PREDICT + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + Util.META_BASE_TYPE + "/" + MLAlgorithmEnum.LogReg.name() + "-" + Util.algorithmAmount + "-" + Util.MEASURE_TYPE + ".arff", predictedData);
+        //ConverterUtils.DataSink.write(Util.BEST_ALGORITHM_PREDICT + Util.DB_TYPE + Util.SEARCH_TYPE + "/" + Util.META_BASE_TYPE + "/" + MLAlgorithmEnum.LogReg.name() + "-" + Util.algorithmAmount + "-" + Util.MEASURE_TYPE + ".arff", predictedData);
         return predictedData;
     }
 }

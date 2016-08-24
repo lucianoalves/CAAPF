@@ -80,7 +80,7 @@ public class MLRecommendBestAlgorithmMain {
             try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Util.META_NIVEL + Util.DB_TYPE + Util.SEARCH_TYPE +"/"+ "metaFeaturesWithBestAlgorithm-"+Util.MEASURE_TYPE+"-"+Util.algorithmAmount +".csv"), "UTF-8"))) {
                 for (String s : rankings) {
                     bw.write(s);
-                    bw.write(Util.CSV_SEPARATOR);
+                    //bw.write(Util.CSV_SEPARATOR);
                     if (!s.contains("dataSetName")) {                        
                         int rank;
                         List<MLAlgorithmBean> list = map.get(s.split(",")[0]);
@@ -95,17 +95,6 @@ public class MLRecommendBestAlgorithmMain {
                     }
                     bw.newLine();
                 }
-                /*
-                for (int i = 0; i < 22 + Util.algorithmAmount; i++) {
-                    bw.write(Util.CSV_SEPARATOR);
-                }
-                
-                for (int c : count) {
-                    bw.write(Util.CSV_SEPARATOR);
-                    bw.write(String.valueOf(c));
-                }
-                bw.newLine();
-                */
                 bw.flush();
             }
         }

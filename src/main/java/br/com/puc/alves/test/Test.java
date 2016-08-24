@@ -5,6 +5,7 @@ import java.io.CharArrayReader;
 import java.io.Externalizable;
 import java.io.File;
 import java.io.Serializable;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,8 +27,11 @@ public class Test implements Cloneable {
     final static Logger logger = Logger.getLogger(Test.class);
     public static void main(String[] args) {
         try {
+            DecimalFormat df = new DecimalFormat("#.000");
             
-            String s = "abcdefgh";
+            System.out.println(df.format(3d));
+            
+            /*String s = "abcdefgh";
             char[] chars = new char[s.length()];
             s.getChars(0, s.length(), chars, 0);
             //CharArrayReader c1 = new CharArrayReader(c);
