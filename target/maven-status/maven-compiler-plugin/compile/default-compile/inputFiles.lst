@@ -1,6 +1,8 @@
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/meta/RankingMajoritaryBean.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/meta/RunningRandomForest.java
+/home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/utils/ArffSaver2.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/lessmann/TreeOptions.java
+/home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/base/XGBostMain.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/utils/Util.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/lessmann/HyperParamSVM.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/base/MetaBase.java
@@ -18,16 +20,20 @@
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/base/MLAlgorithmEnum.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/meta/RankingRPCvsRankMediaAllAlgorithm.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/meta/RunningMLP1.java
+/home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/utils/TransformCsvToArff.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/lessmann/CartMain.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/lessmann/KStarMain.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/test/Experiment.java
+/home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/base/ArffToLibSVMMain.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/base/ModelBean.java
+/home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/test/Solution.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/lessmann/GenerateMetaBaseMain.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/meta/RunningLogReg.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/utils/Statistics.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/lessmann/LS_SVMMain.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/lessmann/LogRegMain.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/lessmann/C45Main.java
+/home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/utils/CSVLoader2.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/meta/RankingBalance.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/lessmann/L_SVMMain.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/meta/CrossValidationAddPrediction.java
@@ -35,6 +41,7 @@
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/lessmann/RandomForestMain.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/utils/ExperimentUtils.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/meta/RankingMajoritary.java
+/home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/base/Algorithm.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/meta/RankingKNNvsRankMediaAllAlgorithm.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/base/NormalizingInstances.java
 /home/luciano/Projects/NetBeans/CAAPF/src/main/java/br/com/puc/alves/base/ConvertArffToCsvMain.java

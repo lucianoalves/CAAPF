@@ -1,17 +1,9 @@
 package br.com.puc.alves.test;
 
 import br.com.puc.alves.utils.Util;
-import java.io.CharArrayReader;
-import java.io.Externalizable;
-import java.io.File;
-import java.io.Serializable;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Random;
 import org.apache.log4j.Logger;
-import weka.attributeSelection.BestFirst;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.evaluation.output.prediction.PlainText;
